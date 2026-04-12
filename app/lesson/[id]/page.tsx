@@ -99,7 +99,7 @@ export default function LessonPage() {
       )}
 
       {/* Fixed bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-sm border-t border-border/50 py-4 px-6 z-20">
+      <div className="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-sm border-t border-border/50 py-4 px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] z-20">
         <div className="max-w-2xl mx-auto">
           {!score ? (
             <Recorder reference={phrase.text} onScored={handleScored} />

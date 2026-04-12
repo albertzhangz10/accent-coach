@@ -17,8 +17,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Prevent text selection and callouts in standalone PWA mode */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Disable tap highlight on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .btn {
   @apply inline-flex items-center justify-center rounded-full font-semibold transition-transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  touch-action: manipulation;
 }
 
 .card {
