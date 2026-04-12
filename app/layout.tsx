@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
+import { VoicePickerClient } from "@/components/VoicePicker";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Accent Coach",
-  description: "Train your English accent with AI-powered pronunciation feedback.",
+  description:
+    "Train your English accent with AI-powered pronunciation feedback.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className="font-sans min-h-screen">
@@ -16,7 +22,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="inline-block w-6 h-6 rounded-full bg-gradient-to-br from-accent to-accent2" />
               Accent Coach
             </a>
-            <nav className="text-sm text-zinc-400">Practice · Progress</nav>
+            <nav className="flex items-center gap-4 text-sm text-zinc-400">
+              <a href="/" className="hover:text-zinc-200">
+                Practice
+              </a>
+              <VoicePickerClient />
+            </nav>
           </div>
         </header>
         <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>

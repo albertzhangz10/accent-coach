@@ -1,225 +1,290 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { scoreAgainstReference, type AttemptScore, type WordScore } from "@/lib/scoring";
-
-type TokenInfo =
-  | { configured: false }
-  | { configured: true; token: string; region: string };
+import { useCallback, useEffect, useRef, useState } from "react";
+import { WavRecorder } from "@/lib/webRecorder";
+import { speakNative, stopSpeaking } from "@/lib/webTts";
+import type { AttemptScore } from "@/lib/scoring";
 
 type Props = {
   reference: string;
   onScored: (score: AttemptScore) => void;
 };
 
-type State = "idle" | "recording" | "processing" | "done" | "error";
+type State = "idle" | "listening" | "recording" | "processing" | "error";
 
 export function Recorder({ reference, onScored }: Props) {
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
-  const recognizerRef = useRef<any>(null);
-  const fallbackRecRef = useRef<any>(null);
+  const [durationMs, setDurationMs] = useState(0);
+  const recorderRef = useRef<WavRecorder | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    fetch("/api/speech-token")
-      .then((r) => r.json())
-      .then(setTokenInfo)
-      .catch(() => setTokenInfo({ configured: false }));
-  }, []);
-
+  // Reset on reference change
   useEffect(() => {
     setState("idle");
     setError(null);
+    setDurationMs(0);
+    return () => {
+      recorderRef.current?.cancel();
+      stopSpeaking();
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [reference]);
 
-  async function startAzure() {
-    if (!tokenInfo || !tokenInfo.configured) return;
-    const sdk = await import("microsoft-cognitiveservices-speech-sdk");
-    const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
-      tokenInfo.token,
-      tokenInfo.region
-    );
-    speechConfig.speechRecognitionLanguage = "en-US";
+  const handleListen = useCallback(() => {
+    setState("listening");
+    speakNative(reference);
+    // Return to idle after a brief moment — Audio plays async
+    setTimeout(() => {
+      setState((s) => (s === "listening" ? "idle" : s));
+    }, 1500);
+  }, [reference]);
 
-    const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
-    const paConfig = new sdk.PronunciationAssessmentConfig(
-      reference,
-      sdk.PronunciationAssessmentGradingSystem.HundredMark,
-      sdk.PronunciationAssessmentGranularity.Phoneme,
-      true
-    );
+  const handleRecord = useCallback(async () => {
+    setError(null);
+    try {
+      const rec = new WavRecorder();
+      recorderRef.current = rec;
+      await rec.start();
+      setState("recording");
+      setDurationMs(0);
+      timerRef.current = setInterval(() => {
+        setDurationMs(rec.getDurationMs());
+      }, 100);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Microphone access denied";
+      setError(msg + " — check your browser permissions.");
+      setState("error");
+    }
+  }, []);
 
-    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
-    paConfig.applyTo(recognizer);
-    recognizerRef.current = recognizer;
+  const handleCancel = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    recorderRef.current?.cancel();
+    recorderRef.current = null;
+    setState("idle");
+    setDurationMs(0);
+  }, []);
 
-    setState("recording");
+  const handleStop = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const rec = recorderRef.current;
+    if (!rec) return;
 
-    recognizer.recognizeOnceAsync(
-      (result: any) => {
-        setState("processing");
-        try {
-          const pa = sdk.PronunciationAssessmentResult.fromResult(result);
-          const detail = (pa as any).detailResult?.Words ?? [];
-          const words: WordScore[] = detail.map((w: any) => {
-            const acc = w.PronunciationAssessment?.AccuracyScore ?? 0;
-            const err = w.PronunciationAssessment?.ErrorType ?? "None";
-            let status: WordScore["status"] = "good";
-            if (err === "Omission") status = "missing";
-            else if (acc < 30) status = "poor";
-            else if (acc < 60) status = "poor";
-            else if (acc < 85) status = "ok";
-            return { word: w.Word ?? "", score: Math.round(acc), status };
-          });
+    const duration = rec.getDurationMs();
+    const peak = rec.getPeakLevel();
 
-          const score: AttemptScore = {
-            overall: Math.round((pa as any).pronunciationScore ?? 0),
-            accuracy: Math.round((pa as any).accuracyScore ?? 0),
-            fluency: Math.round((pa as any).fluencyScore ?? 0),
-            completeness: Math.round((pa as any).completenessScore ?? 0),
-            words,
-            transcript: result.text ?? "",
-            mode: "azure",
-          };
-          onScored(score);
-          setState("done");
-        } catch (e: any) {
-          setError(e?.message ?? "Scoring failed");
-          setState("error");
-        } finally {
-          recognizer.close();
-          recognizerRef.current = null;
-        }
-      },
-      (err: any) => {
-        setError(err?.toString() ?? "Recognition failed");
-        setState("error");
-        recognizer.close();
-        recognizerRef.current = null;
-      }
-    );
-  }
-
-  async function startFallback() {
-    const AnyWindow = window as any;
-    const SR = AnyWindow.SpeechRecognition || AnyWindow.webkitSpeechRecognition;
-    if (!SR) {
-      setError(
-        "Your browser does not support speech recognition. Try Chrome or Safari, or configure AZURE_SPEECH_KEY."
-      );
+    if (duration < 800) {
+      rec.cancel();
+      recorderRef.current = null;
+      setError("Recording too short — hold for at least 1 second.");
       setState("error");
       return;
     }
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    fallbackRecRef.current = rec;
 
-    let transcript = "";
-
-    rec.onresult = (ev: any) => {
-      transcript = ev.results[0]?.[0]?.transcript ?? "";
-    };
-    rec.onerror = (ev: any) => {
-      setError(`Speech error: ${ev.error}`);
+    // -45 dB equivalent: 10^(-45/20) ~ 0.0056
+    if (peak < 0.0056) {
+      rec.cancel();
+      recorderRef.current = null;
+      setError("We didn't hear anything — check your microphone.");
       setState("error");
-      fallbackRecRef.current = null;
-    };
-    rec.onend = () => {
-      if (!transcript) {
-        setError("We didn't catch that — try again.");
-        setState("error");
-        fallbackRecRef.current = null;
+      return;
+    }
+
+    const blob = rec.stop();
+    recorderRef.current = null;
+    setState("processing");
+
+    const formData = new FormData();
+    formData.append("audio", blob, "recording.wav");
+    formData.append("reference", reference);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch("/api/score-audio", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Server error ${res.status}`);
+      }
+
+      const score: AttemptScore = await res.json();
+      onScored(score);
+      setState("idle");
+    } catch (e: unknown) {
+      if ((e as Error).name === "AbortError") {
+        setState("idle");
         return;
       }
-      const score = scoreAgainstReference(reference, transcript);
-      onScored(score);
-      setState("done");
-      fallbackRecRef.current = null;
-    };
-
-    setState("recording");
-    rec.start();
-  }
-
-  async function start() {
-    setError(null);
-    if (tokenInfo?.configured) {
-      await startAzure();
-    } else {
-      await startFallback();
+      const msg = e instanceof Error ? e.message : "Scoring failed";
+      setError(msg);
+      setState("error");
+    } finally {
+      abortRef.current = null;
     }
-  }
+  }, [reference, onScored]);
 
-  function stop() {
-    if (recognizerRef.current) {
-      recognizerRef.current.stopContinuousRecognitionAsync?.();
-    }
-    if (fallbackRecRef.current) {
-      fallbackRecRef.current.stop();
-    }
-  }
+  const handleCancelProcessing = useCallback(() => {
+    abortRef.current?.abort();
+    setState("idle");
+  }, []);
 
-  function playReference() {
-    if (typeof window === "undefined") return;
-    const u = new SpeechSynthesisUtterance(reference);
-    u.lang = "en-US";
-    u.rate = 0.9;
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(
-      (v) => v.lang === "en-US" && /Samantha|Google US|Microsoft/i.test(v.name)
-    );
-    if (preferred) u.voice = preferred;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }
-
-  const mode = tokenInfo?.configured ? "Azure" : "Demo";
+  const formatDuration = (ms: number) => {
+    const secs = Math.floor(ms / 1000);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={playReference}
-          className="btn px-5 py-2.5 bg-panel border border-border text-zinc-200 hover:border-accent2"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="mr-2">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-          </svg>
-          Listen
-        </button>
-
+        {/* Listen / Cancel button */}
         {state === "recording" ? (
           <button
-            onClick={stop}
-            className="btn px-8 py-4 bg-rose-500 text-white text-lg shadow-lg shadow-rose-500/30 animate-pulse"
+            onClick={handleCancel}
+            className="btn px-5 py-2.5 bg-panel border border-border text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
           >
-            Stop
+            Cancel
           </button>
         ) : (
           <button
-            onClick={start}
-            disabled={state === "processing" || tokenInfo === null}
+            onClick={handleListen}
+            disabled={state === "processing"}
+            className="btn px-5 py-2.5 bg-panel border border-border text-zinc-200 hover:border-accent2"
+          >
+            {state === "listening" ? (
+              <svg
+                className="animate-spin mr-2 h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="opacity-25"
+                />
+                <path
+                  d="M4 12a8 8 0 018-8"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  className="opacity-75"
+                />
+              </svg>
+            ) : (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="mr-2"
+              >
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+              </svg>
+            )}
+            Listen
+          </button>
+        )}
+
+        {/* Record / Stop / Processing */}
+        {state === "recording" ? (
+          <button
+            onClick={handleStop}
+            className="btn px-8 py-4 bg-rose-500 text-white text-lg shadow-lg shadow-rose-500/30 animate-pulse"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="mr-2"
+            >
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+            Stop
+          </button>
+        ) : state === "processing" ? (
+          <button
+            onClick={handleCancelProcessing}
+            className="btn px-8 py-4 bg-panel border border-border text-zinc-200"
+          >
+            <svg
+              className="animate-spin mr-2 h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="opacity-25"
+              />
+              <path
+                d="M4 12a8 8 0 018-8"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                className="opacity-75"
+              />
+            </svg>
+            Scoring...
+          </button>
+        ) : (
+          <button
+            onClick={handleRecord}
+            disabled={state === "listening"}
             className="btn px-8 py-4 bg-accent text-white text-lg shadow-lg shadow-accent/30 hover:brightness-110"
           >
-            {state === "processing" ? "Scoring…" : "Record"}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="mr-2"
+            >
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.993 6.993 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z" />
+            </svg>
+            Record
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <span
-          className={`inline-block w-1.5 h-1.5 rounded-full ${
-            mode === "Azure" ? "bg-emerald-400" : "bg-amber-400"
-          }`}
-        />
-        {mode === "Azure" ? "Azure pronunciation assessment" : "Demo mode (browser speech)"}
-      </div>
+      {/* Duration counter */}
+      {state === "recording" && (
+        <div className="flex items-center gap-2 text-sm text-zinc-300">
+          <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          {formatDuration(durationMs)}
+        </div>
+      )}
 
-      {error && <div className="text-sm text-rose-300 text-center max-w-md">{error}</div>}
+      {/* Error */}
+      {state === "error" && error && (
+        <div className="text-sm text-rose-300 text-center max-w-md bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
+          {error}
+          <button
+            onClick={() => {
+              setError(null);
+              setState("idle");
+            }}
+            className="block mx-auto mt-2 text-xs text-zinc-400 hover:text-zinc-200 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ export type Progress = {
   lastPracticeDate: string | null;
   lessonScores: Record<string, number[]>;
   totalPhrasesSpoken: number;
+  completedLessons: string[];
 };
 
 const empty: Progress = {
@@ -14,6 +15,7 @@ const empty: Progress = {
   lastPracticeDate: null,
   lessonScores: {},
   totalPhrasesSpoken: 0,
+  completedLessons: [],
 };
 
 export function loadProgress(): Progress {
@@ -60,4 +62,17 @@ export function lessonBest(p: Progress, lessonId: string): number | null {
   const arr = p.lessonScores[lessonId];
   if (!arr || arr.length === 0) return null;
   return Math.max(...arr);
+}
+
+export function isLessonCompleted(p: Progress, lessonId: string): boolean {
+  return p.completedLessons.includes(lessonId);
+}
+
+export function markLessonCompleted(lessonId: string): Progress {
+  const p = loadProgress();
+  if (!p.completedLessons.includes(lessonId)) {
+    p.completedLessons.push(lessonId);
+  }
+  saveProgress(p);
+  return p;
 }

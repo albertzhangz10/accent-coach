@@ -1,7 +1,33 @@
+export type PhonemeDetail = {
+  phoneme: string;
+  arpabet?: string;
+  score: number;
+  alternatives?: Array<{ phoneme: string; score: number }>;
+};
+
+export type SyllableDetail = {
+  syllable: string;
+  grapheme: string;
+  score: number;
+};
+
+export type ProsodyFeedback = {
+  breakErrorTypes?: string[];
+  breakLengthMs?: number;
+  intonationErrorTypes?: string[];
+  monotone?: boolean;
+};
+
 export type WordScore = {
   word: string;
   score: number;
   status: "good" | "ok" | "poor" | "missing";
+  errorType?: string;
+  worstPhoneme?: { phoneme: string; score: number; arpabet?: string } | null;
+  worstSyllable?: { grapheme: string; score: number } | null;
+  phonemes?: PhonemeDetail[];
+  syllables?: SyllableDetail[];
+  prosodyFeedback?: ProsodyFeedback;
 };
 
 export type AttemptScore = {
@@ -9,10 +35,15 @@ export type AttemptScore = {
   accuracy: number;
   fluency: number;
   completeness: number;
+  prosody?: number;
   words: WordScore[];
   transcript: string;
+  coachNotes?: string[];
   mode: "azure" | "fallback";
+  warning?: string;
 };
+
+// --------------- Fallback scorer (used when Azure is not configured) ---------------
 
 function normalize(s: string): string[] {
   return s
@@ -48,20 +79,16 @@ function wordSimilarity(a: string, b: string): number {
 
 export function scoreAgainstReference(
   reference: string,
-  transcript: string
+  transcript: string,
 ): AttemptScore {
   const refWords = normalize(reference);
   const hypWords = normalize(transcript);
 
   const words: WordScore[] = refWords.map((ref) => {
     let best = 0;
-    let bestIdx = -1;
-    hypWords.forEach((h, i) => {
+    hypWords.forEach((h) => {
       const s = wordSimilarity(ref, h);
-      if (s > best) {
-        best = s;
-        bestIdx = i;
-      }
+      if (s > best) best = s;
     });
     const score = Math.round(best * 100);
     let status: WordScore["status"] = "missing";
