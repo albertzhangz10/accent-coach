@@ -387,7 +387,7 @@ export async function POST(req: Request) {
   let audioBytes: Uint8Array;
   let reference: string;
   try {
-    const form = await req.formData();
+    const form: any = await req.formData();
     const audio = form.get("audio");
     const ref = form.get("reference");
     if (!audio || typeof ref !== "string") {
@@ -417,7 +417,7 @@ export async function POST(req: Request) {
     `| ref: "${reference}"`
   );
 
-  const paConfig = {
+  const basePaConfig = {
     ReferenceText: reference,
     GradingSystem: "HundredMark",
     Granularity: "Phoneme",
@@ -427,15 +427,18 @@ export async function POST(req: Request) {
     PhonemeAlphabet: "IPA",
     // Top-5 closest-sounding phonemes — used for actionable "sounded like /s/" hints.
     NBestPhonemeCount: 5,
-    // Prosody / intonation scoring on the NBest result.
-    EnableProsodyAssessment: "True",
   };
-  const paHeader = Buffer.from(JSON.stringify(paConfig)).toString("base64");
 
   const url = `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
 
+  // Azure hangs indefinitely when prosody assessment is enabled on silent or
+  // near-silent audio. Try with prosody first; on timeout, retry without it so
+  // we still get accuracy/fluency/completeness scores instead of a hard error.
   let azureRes: Response;
+  let prosodyEnabled = true;
   try {
+    const paConfigWithProsody = { ...basePaConfig, EnableProsodyAssessment: "True" };
+    const paHeader = Buffer.from(JSON.stringify(paConfigWithProsody)).toString("base64");
     azureRes = await fetchWithRetry(url, {
       method: "POST",
       headers: {
@@ -446,12 +449,29 @@ export async function POST(req: Request) {
       },
       body: trimmedBytes,
     });
-  } catch (e: any) {
-    console.error(`[score-audio] network error:`, e?.message);
-    return NextResponse.json(
-      { error: `Azure network error: ${e?.message ?? "unknown"}` },
-      { status: 502 }
-    );
+  } catch (firstErr: any) {
+    // Prosody request timed out or failed — retry without prosody.
+    console.warn(`[score-audio] prosody request failed (${firstErr?.message}), retrying without prosody`);
+    prosodyEnabled = false;
+    try {
+      const paHeader = Buffer.from(JSON.stringify(basePaConfig)).toString("base64");
+      azureRes = await fetchWithRetry(url, {
+        method: "POST",
+        headers: {
+          "Ocp-Apim-Subscription-Key": key,
+          "Content-Type": "audio/wav",
+          "Pronunciation-Assessment": paHeader,
+          Accept: "application/json",
+        },
+        body: trimmedBytes,
+      });
+    } catch (e: any) {
+      console.error(`[score-audio] network error:`, e?.message);
+      return NextResponse.json(
+        { error: `Azure network error: ${e?.message ?? "unknown"}` },
+        { status: 502 }
+      );
+    }
   }
 
   if (!azureRes.ok) {
