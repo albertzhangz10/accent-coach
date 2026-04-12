@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Accent Coach",
+    "slug": "accent-coach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "accentcoach",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.accentcoach.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Accent Coach uses your microphone to record speech for pronunciation feedback."
+      }
+    },
+    "android": {
+      "package": "com.accentcoach.app",
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Accent Coach uses your microphone to record speech for pronunciation feedback."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

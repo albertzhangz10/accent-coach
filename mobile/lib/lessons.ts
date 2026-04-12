@@ -1,0 +1,590 @@
+export type Phrase = {
+  text: string;
+  tip: string;
+};
+
+export type Lesson = {
+  id: string;
+  title: string;
+  focus: string;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  accent: string;
+  phrases: Phrase[];
+};
+
+export const LESSONS: Lesson[] = [
+  // ───────────────────────────── WEEK 1 · Foundation consonants ─────────────────────────────
+  {
+    id: "th-sounds",
+    title: "TH: Voiced and Unvoiced",
+    focus: "The tongue-tip fricatives",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "I think this thing belongs on that shelf.", tip: "For unvoiced TH in 'think' and 'thing', push your tongue tip lightly between your teeth and blow air with no voice — do not substitute S." },
+      { text: "My brother said the weather felt warmer than Thursday.", tip: "'Brother' and 'weather' use voiced TH — same tongue position, but turn your vocal cords on so you feel a buzz on the tongue." },
+      { text: "Both of them thanked us for the ride.", tip: "'Both' ends unvoiced; 'them' starts voiced. Keep the tongue forward — if it slides back, TH will drift into D or Z." },
+      { text: "Breathe through your nose before you speak.", tip: "'Breathe' ends with a long, voiced TH — let the buzz continue until the word fully stops, unlike the noun 'breath' which ends unvoiced." },
+    ],
+  },
+  {
+    id: "r-vs-l",
+    title: "The American R and L",
+    focus: "Bunched R vs tongue-tip L",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "Really rare roses grew along the road.", tip: "For American R, pull your tongue back and bunch the sides up against your upper molars — the tip should float, never touching anything." },
+      { text: "Lovely yellow lilies lined the little lane.", tip: "For L, press the tongue tip firmly on the ridge behind your top teeth and let voice flow around both sides of the tongue." },
+      { text: "I rarely call her on a Friday afternoon.", tip: "Switch cleanly between R (no contact) and L (firm contact). A common error is touching the tip for R — keep the tip low and relaxed." },
+      { text: "The librarian recommended a worldly travel guide.", tip: "'World' and 'girl' stack L after R — finish the R first, then make solid tongue contact for L without rushing." },
+    ],
+  },
+  {
+    id: "v-vs-w",
+    title: "V vs W",
+    focus: "Teeth-on-lip vs rounded lips",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "We visited a very wide vineyard on Wednesday.", tip: "For W, round your lips into a tight circle with no teeth contact; for V, rest your top teeth on the inside of your bottom lip and voice it." },
+      { text: "Victor wore a velvet vest to the wedding.", tip: "If your top teeth never touch your lip, V will collapse into W. Check with a mirror — you should see the teeth bite the lip softly." },
+      { text: "The waiter poured a glass of white wine vigorously.", tip: "'Wine' and 'vigorously' use opposite mouth shapes. Start W with lips already rounded, but start V with lips relaxed and teeth engaged." },
+      { text: "I will never drive a van in Venice.", tip: "Practice contrasting 'will' vs 'village' — W is a rounded glide, V is a buzzing friction." },
+    ],
+  },
+  {
+    id: "f-vs-v",
+    title: "F vs V",
+    focus: "Voiceless and voiced labiodentals",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "Five fresh figs fell off the kitchen shelf.", tip: "For F, rest top teeth on bottom lip and blow quiet air with no voice — the only sound is a soft hiss." },
+      { text: "I have five heavy boxes to move upstairs.", tip: "'Have' and 'move' end in voiced V — let the buzz ring out before the next word. Learners often cut V short into an F." },
+      { text: "Vanessa filmed a beautiful view from above.", tip: "Same mouth position as F, but voice the V so you feel a vibration in your lip. Watch: 'filmed' is F then V in one breath." },
+      { text: "The coffee and vanilla muffins were half gone.", tip: "Contrast 'coffee' (F) with 'vanilla' (V). Keep the teeth placement identical — only the voice switches on or off." },
+    ],
+  },
+  {
+    id: "p-vs-b",
+    title: "P vs B with Aspiration",
+    focus: "That puff of air on P",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "Please pack the purple paper before noon.", tip: "Word-initial P is aspirated — release a small puff of air so you could move a tissue held in front of your mouth." },
+      { text: "The baby boy bounced a big blue ball.", tip: "B has the same lip closure as P but with voice and no puff. A tissue held in front should barely move on B." },
+      { text: "A happy puppy napped beside the porch.", tip: "Inside a word after a stressed vowel, P keeps its puff — 'happy' still has a clear aspirated P, not a B-like sound." },
+      { text: "I may buy a pair of spare parts.", tip: "After an S, P loses its aspiration — 'spare' sounds almost like 'sbare'. But 'pair' and 'parts' both start with a clear puff." },
+    ],
+  },
+  {
+    id: "h-dropping",
+    title: "The Breathy H",
+    focus: "Don't swallow initial H",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "He hoped his hotel had a heated pool.", tip: "H is just a puff of warm air through the shape of the following vowel — not a throat scrape. Feel the warmth on the back of your hand." },
+      { text: "Hurry home before Henry heats the oven.", tip: "Every stressed word-initial H needs clear breath. Dropping H turns 'Henry' into 'enry' — a common native-speaker contraction you should avoid in careful speech." },
+      { text: "I hope he'll help her however he can.", tip: "Unstressed 'he' and 'her' can reduce to 'ee' and 'er' in fast connected speech, but keep 'hope' and 'help' breathy and clear." },
+      { text: "Hannah held a huge handful of hazelnuts.", tip: "Stack of Hs here — each one should be a fresh little exhale. Do not let them fuse into one long breath." },
+    ],
+  },
+  {
+    id: "ng-endings",
+    title: "NG Endings without the G",
+    focus: "Nasal release, no hard stop",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "She is singing and running along the beach.", tip: "NG is made by raising the back of your tongue to the soft palate and letting air flow out your nose — do not add a hard G release at the end." },
+      { text: "That morning walk felt surprisingly long.", tip: "'Morning' and 'long' end purely nasal. If you hear a 'guh' after 'long', you are releasing the stop — keep the tongue planted and just stop voicing." },
+      { text: "I keep forgetting the meeting starts at eight.", tip: "'Forgetting' and 'meeting' — learners often add 'ing-guh'. The tongue should stay up until silence." },
+      { text: "The king brought a strong young singer.", tip: "'Strong' and 'young' should feel like nose humming into silence. Only words like 'finger' and 'stronger' keep an audible G." },
+    ],
+  },
+
+  // ───────────────────────────── WEEK 2 · Foundation vowels ─────────────────────────────
+  {
+    id: "short-long-i",
+    title: "Short I vs Long EE",
+    focus: "Ship vs sheep",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "This ship is filled with slippery fish.", tip: "Short I is lax — drop your jaw slightly, relax your lips, and keep it quick. The tongue stays near the middle of the mouth." },
+      { text: "Please keep the sheep in the green field.", tip: "Long EE is tense — pull your lips into a small smile, push the tongue forward and high, and hold the sound a touch longer." },
+      { text: "He will leave this evening if it stops raining.", tip: "Contrast 'will' and 'if' (lax I) with 'leave' and 'evening' (tense EE). Length alone is not enough — the tongue positions are different." },
+      { text: "I need a quick list of cheap things to eat.", tip: "'Quick' and 'list' are short and relaxed; 'cheap' and 'eat' feel stretched and smiley. Swap them and the meaning disappears." },
+    ],
+  },
+  {
+    id: "short-long-a",
+    title: "Short A, Ash, and Long AY",
+    focus: "Cat, cake, and the flat A",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "The cat sat on a flat plastic mat.", tip: "The 'cat' vowel is the ash sound — drop your jaw wide open and push the tongue forward and low. It should feel almost like a bleat." },
+      { text: "Kate baked a cake for the neighbors today.", tip: "Long A is actually the diphthong AY — start in the middle of the mouth and glide up toward EE. Do not hold it as a single pure vowel." },
+      { text: "I had a sandwich after a hard class.", tip: "'Had', 'sandwich', 'hard', and 'class' all use the flat ash vowel — wide and nasal. Americans lean into this sound more than British speakers." },
+      { text: "Stay safe and wait by the gate.", tip: "'Stay', 'safe', 'wait', 'gate' — feel the jaw rise through the glide. If the vowel stays flat, it will sound like 'get' instead of 'gate'." },
+    ],
+  },
+  {
+    id: "short-long-u",
+    title: "Short U vs Long OO",
+    focus: "Cup, put, and boot",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "I took a quick look at the cookbook.", tip: "'Took' and 'look' use the lax short OO — lips slightly rounded, tongue relaxed. It is halfway between 'boot' and 'but'." },
+      { text: "She cooked a pot of hot soup for lunch.", tip: "'Soup' uses tense long OO — fully round the lips and push them slightly forward. 'Cooked' and 'lunch' use shorter, relaxed vowels." },
+      { text: "My cousin runs a small supper club downtown.", tip: "The 'cup' vowel (also in 'runs' and 'supper') is made with an unrounded, central mouth — jaw slightly open, lips neutral, tongue resting." },
+      { text: "Put the pudding on the wooden counter.", tip: "'Put', 'pudding', and 'wooden' all share the lax short OO — lips barely rounded. Do not force them into a tense 'boot' vowel." },
+    ],
+  },
+  {
+    id: "schwa",
+    title: "The Schwa Reduction",
+    focus: "The laziest vowel in English",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "A banana and a balloon fell off the table.", tip: "The first A in 'a banana' and the last A in 'banana' both reduce to schwa — barely open your mouth and let the tongue rest in the center." },
+      { text: "The problem is about the camera and the lens.", tip: "'About', 'camera', and 'the' all use schwa. It is the single most common vowel in English — if unstressed syllables sound 'full', you are not reducing enough." },
+      { text: "Support from a family of seven is important.", tip: "'Support', 'from', 'a', 'of', and 'is' can all weaken to schwa. Think of it as the sound you make when a doctor says 'say ah' but much shorter." },
+      { text: "I can give you an answer in a minute.", tip: "Unstressed 'can', 'you', 'an', and 'a' all collapse toward schwa in natural speech — the rhythm stays on 'give', 'answer', and 'minute'." },
+    ],
+  },
+  {
+    id: "diphthongs",
+    title: "American Diphthongs",
+    focus: "AY, OW, OY gliding vowels",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "The boy enjoyed his new toy for hours.", tip: "OY glides from a rounded 'aw' toward EE — start with the lips rounded and finish with a slight smile. Do not stop on the first half." },
+      { text: "Now is the time to go outside for a walk.", tip: "'Now' and 'outside' use OW, which glides from a wide ash vowel toward OO — jaw opens first, then lips round." },
+      { text: "I like to ride my bike at night.", tip: "'Like', 'ride', 'bike', 'night' all use the long I diphthong, gliding from 'ah' up toward EE. Feel the jaw close through the glide." },
+      { text: "The loud crowd slowly made their way home.", tip: "'Loud' and 'crowd' glide from open to round; 'slowly' and 'home' glide from mid-back toward OO. Each diphthong is two motions in one vowel." },
+    ],
+  },
+  {
+    id: "r-colored-vowels",
+    title: "R-Colored Vowels",
+    focus: "ER, AR, OR, AIR, EAR",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "The teacher heard a bird near the river.", tip: "'Teacher' and 'bird' use the stressed ER — bunch the tongue up and back so the whole vowel is R-colored from the start. There is no separate vowel plus R." },
+      { text: "The farmer parked his car in the yard.", tip: "For AR in 'farmer' and 'car', drop the jaw to the 'ah' of father, then bunch the tongue for R while the sound is still ringing." },
+      { text: "Four more shortcuts lead toward the shore.", tip: "OR is a rounded 'oh' that immediately bunches into R. Keep the lips slightly rounded throughout — do not unround to schwa." },
+      { text: "Mary carefully cared for the rare pair.", tip: "AIR as in 'care' starts near the 'bed' vowel and glides into R. Short and tight — not two separate syllables." },
+    ],
+  },
+  {
+    id: "cot-caught-merger",
+    title: "The Cot–Caught Merger",
+    focus: "Open O vs rounded AW",
+    level: "Beginner",
+    accent: "American",
+    phrases: [
+      { text: "I bought a small cot at the thrift store.", tip: "Many Americans merge 'cot' and 'caught' into one open, unrounded 'ah' vowel. In the merged accent, 'bought' rhymes with 'hot'." },
+      { text: "The dog caught a ball on the lawn.", tip: "If you keep the distinction, 'caught' and 'lawn' use a more rounded, longer AW; 'dog' and 'ball' can go either way depending on region." },
+      { text: "My dad taught me to draw and paint.", tip: "'Taught' and 'draw' are AW words; 'dad' is the flat ash A. Three different jaw positions in one short sentence — slow down and feel each one." },
+      { text: "I thought the author wrote another chapter.", tip: "'Thought', 'author', and 'wrote' use three different back vowels. Pick either the merged or unmerged version and stay consistent within a conversation." },
+    ],
+  },
+
+  // ───────────────────────────── WEEK 3 · Word-level details ─────────────────────────────
+  {
+    id: "word-stress-2syll",
+    title: "Two-Syllable Word Stress",
+    focus: "Stress the first or the second?",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "My doctor wrote a message about the package.", tip: "Most two-syllable nouns stress the first syllable: DOC-tor, MES-sage, PACK-age. The second syllable reduces toward schwa." },
+      { text: "Please relax and forget about the delay.", tip: "Many two-syllable verbs stress the second syllable: re-LAX, for-GET, de-LAY. Learners often flatten stress and lose this pattern." },
+      { text: "The mountain behind the cabin looks purple.", tip: "'Mountain', 'cabin', 'purple' — three first-stress nouns in a row. The unstressed vowels all slide toward schwa." },
+      { text: "I decided to prepare a simple dinner.", tip: "'Decided', 'prepare' stress the second syllable; 'simple', 'dinner' stress the first. Mixing them up is the biggest giveaway of a learner." },
+    ],
+  },
+  {
+    id: "word-stress",
+    title: "Noun vs Verb Stress Pairs",
+    focus: "REcord vs reCORD",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I want to record a new record tonight.", tip: "Verb is re-CORD with stress on the second syllable; noun is RE-cord with stress on the first. Same spelling, different rhythms." },
+      { text: "Please present the present to your teacher.", tip: "Verb pre-SENT, noun PRE-sent. On the noun, the second vowel reduces to schwa; on the verb, the first vowel does." },
+      { text: "They will object to the new object on display.", tip: "Verb ob-JECT (stress shifts right), noun OB-ject (stress sits left). Move the whole pitch peak, not just volume." },
+      { text: "I need a permit before they permit construction.", tip: "Noun PER-mit, verb per-MIT. The unstressed syllable in each version almost disappears — 'permit' the noun is really PER-m't." },
+    ],
+  },
+  {
+    id: "compound-stress",
+    title: "Compound Noun Stress",
+    focus: "GREEN-house vs green HOUSE",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I grew tomatoes in the greenhouse last summer.", tip: "Compound nouns stress the first element: GREEN-house (a building for plants). A 'green HOUSE' with equal stress would mean a house that is green." },
+      { text: "My boyfriend works at the bookstore downtown.", tip: "'BOY-friend' and 'BOOK-store' — first element gets the main stress, second element reduces. This distinguishes them from adjective-noun pairs." },
+      { text: "Can you pass me the hairbrush from the bathroom?", tip: "'HAIR-brush' and 'BATH-room' are compounds. Say them as single stress units — do not give both halves equal weight." },
+      { text: "She left her cellphone on the coffee table.", tip: "'CELL-phone' is a tight compound; 'COFF-ee table' is a looser compound where the stress still sits on the first word of the pair." },
+    ],
+  },
+  {
+    id: "ed-endings",
+    title: "-ed Past Tense: T, D, or ID",
+    focus: "Three endings, one spelling",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I walked, talked, and cooked with my friend.", tip: "After voiceless consonants like K, P, F, S, SH, CH — the -ed sounds like a T. 'Walked' = walkt, not wal-ked." },
+      { text: "She opened the door and smiled politely.", tip: "After voiced consonants or vowels — the -ed sounds like a D. 'Opened' = opend; 'smiled' = smild, with no extra syllable." },
+      { text: "The guests waited and then started eating.", tip: "Only after T or D does -ed add a full 'id' syllable. 'Waited' = way-tid; 'started' = star-tid. This is the only time -ed is a whole syllable." },
+      { text: "He washed the car, vacuumed inside, and polished the wheels.", tip: "'Washed' (T), 'vacuumed' (D), 'polished' (T). Learners often add 'id' to all three — stop the extra syllable unless it ends in T or D." },
+    ],
+  },
+  {
+    id: "s-endings",
+    title: "-s Endings: S, Z, or IZ",
+    focus: "Plural and verb endings",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "The cats sleep near the books and cups.", tip: "After voiceless sounds (T, K, P, F, TH) — -s is a crisp S. 'Cats' = kats, 'books' = books, 'cups' = kups." },
+      { text: "My dogs love the toys in their beds.", tip: "After voiced sounds (D, G, B, V, vowels) — -s becomes a buzzing Z. 'Dogs' = dogz, 'toys' = toyz, 'beds' = bedz." },
+      { text: "She watches the buses pass the houses.", tip: "After sibilants (S, Z, SH, CH, J) — the ending adds a full 'iz' syllable. 'Watches' = wach-iz, 'buses' = bus-iz, 'houses' = how-ziz." },
+      { text: "He grabs his keys, his phone, and his badges.", tip: "'Grabs' and 'keys' are Z; 'badges' is iz. Feel your voice box to test — if it buzzes, it is Z, not S." },
+    ],
+  },
+  {
+    id: "silent-letters",
+    title: "Silent Letters",
+    focus: "Letters you don't say",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I hurt my knee and my wrist on Wednesday.", tip: "'Knee' drops the K; 'wrist' drops the W; 'Wednesday' silences the first D. Start each of these words with the next letter's sound only." },
+      { text: "The little lamb climbed a tall oak tree.", tip: "'Lamb' and 'climbed' both end with silent B — the lips close for the M but never release. Do not add a 'buh' at the end." },
+      { text: "I know the honest answer is on the island.", tip: "'Know' (silent K), 'honest' (silent H), 'island' (silent S), 'answer' (silent W). Four different silent-letter traps in one sentence." },
+      { text: "He wrote a receipt on a crumpled napkin.", tip: "'Wrote' drops W; 'receipt' drops P. English spelling preserves historical letters that English speech has long abandoned." },
+    ],
+  },
+  {
+    id: "mispronounced-words",
+    title: "Notoriously Mispronounced Words",
+    focus: "Traps learners hit first",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I often eat vegetables on Wednesday nights.", tip: "'Often' — the T is silent for most Americans: OFF-en. 'Vegetable' compresses to VEJ-tuh-bul (3 syllables). 'Wednesday' = WENZ-day." },
+      { text: "The comfortable couch sat near the library.", tip: "'Comfortable' is 3 syllables: KUMF-ter-bul, not four. 'Library' is 3 syllables: LY-brer-ee, not 'ly-bary'." },
+      { text: "February is usually cold and surprisingly long.", tip: "'February' is FEB-yoo-air-ee for most Americans — the first R quietly disappears. 'Usually' is YOO-zhoo-lee in casual speech." },
+      { text: "I almost forgot the jewelry in the drawer.", tip: "'Jewelry' is JOO-l-ree (2 or 3 syllables, not 4). 'Drawer' rhymes with 'more', not with 'lawyer'." },
+    ],
+  },
+  {
+    id: "consonant-clusters",
+    title: "Consonant Clusters",
+    focus: "str-, -sts, -lks, -nths",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "The tourists strolled past six empty posts.", tip: "'Tourists' and 'posts' end in -sts — a tricky stack. Do not insert a vowel; slide T into S into S smoothly, almost like one long sibilant." },
+      { text: "She walks to the park before breakfast.", tip: "'Walks' is -lks — dark L, then K, then S. Many learners drop the L or the K; slow it down to feel all three landings." },
+      { text: "Six months seemed like strange endless weeks.", tip: "'Months' is -nths, which many natives simplify to 'muns' in fast speech. In careful speech, land lightly on each consonant without adding schwas." },
+      { text: "The strong string stretched across the bridge.", tip: "Initial STR- is a tight cluster. Start with S, slide straight into T (unaspirated), then into R without inserting a vowel between them." },
+    ],
+  },
+
+  // ───────────────────────────── WEEK 4 · Connected speech ─────────────────────────────
+  {
+    id: "linking",
+    title: "Consonant-to-Vowel Linking",
+    focus: "Glide across word boundaries",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "Pick it up and put it all away.", tip: "Final consonants flow straight into the next vowel: 'pick it' sounds like 'pi-kit', 'put it' becomes 'pu-dit'. Do not stop between the words." },
+      { text: "Turn it off and look at this instead.", tip: "'Turn it off' links as 'tur-ni-toff'. English pushes final consonants forward into the next syllable — syllables break mid-word, not mid-space." },
+      { text: "Give her an apple and an orange please.", tip: "'An apple' = 'a-napple', 'an orange' = 'a-norange'. The N belongs to the next word in natural speech." },
+      { text: "I made it in about an hour.", tip: "'Made it in about an hour' links as 'may-di-ti-nuh-bow-ta-nour' — one long ribbon of sound with no gaps." },
+    ],
+  },
+  {
+    id: "vowel-linking",
+    title: "Vowel-to-Vowel Linking",
+    focus: "Intrusive /j/ and /w/",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I asked her to go in on the idea.", tip: "Between two vowels where the first ends in EE, a tiny /y/ sneaks in: 'the idea' = 'thee-yidea', 'go in' uses a small /w/: 'go-win'." },
+      { text: "You are a really amazing artist.", tip: "'You are' links with a /w/: 'you-ware'. Lips round on 'you', then glide straight through the next vowel without a break." },
+      { text: "See another example of this pattern.", tip: "'See another' adds a /y/: 'see-yanother'. Your tongue is already high for EE, so the transition naturally slides through /y/." },
+      { text: "I do a few of these every morning.", tip: "'Do a' = 'do-wa', 'few of' = 'few-wuv'. Any word ending in OO or OW links to a vowel through a tiny /w/." },
+    ],
+  },
+  {
+    id: "assimilation",
+    title: "Assimilation: Did You → Didja",
+    focus: "When sounds blend together",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "Did you already finish your homework?", tip: "'Did you' blends to 'didja' — the D and Y fuse into a J sound. 'Your' softens to 'yer'. This is standard in casual American speech." },
+      { text: "What do you want to eat tonight?", tip: "'What do you' collapses to 'wutchu' or 'wuddaya'. T before Y often becomes CH; D before Y often becomes J." },
+      { text: "I'll miss you when you leave tomorrow.", tip: "'Miss you' fuses to 'mishoo' — S before Y becomes SH. This palatalization is one of the most native-sounding shortcuts." },
+      { text: "Would you pass me the salt, please?", tip: "'Would you' = 'wuhja'. The D and Y merge into J, and 'would' loses its full vowel. Drilling this cleans up a ton of learner stiffness." },
+    ],
+  },
+  {
+    id: "elision",
+    title: "Elision: Dropped Sounds",
+    focus: "Next day → nexday",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I saw him the next day at lunch.", tip: "In 'next day', the T drops entirely — 'nexday'. English routinely deletes T or D between two other consonants to keep rhythm flowing." },
+      { text: "She tried to handle it on her own.", tip: "'Tried to' = 'try-tuh' — the D disappears before another T. 'Handle' keeps all its sounds, but 'tried to' compresses." },
+      { text: "I went to the store and came back quickly.", tip: "'Went to' = 'wen-tuh' (T absorbed), 'came back' keeps both. The dropped T in 'went to' is standard, not lazy." },
+      { text: "We left before the most important guest arrived.", tip: "'Most important' = 'mos-important' — T disappears between S and a vowel in fast speech. 'Left before' keeps its T because of the pause." },
+    ],
+  },
+  {
+    id: "weak-forms",
+    title: "Weak Forms of Function Words",
+    focus: "Can, to, of, and, for",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I can swim, but I can't run fast.", tip: "Positive 'can' weakens to 'kn' with a schwa — almost inaudible. Negative 'can't' stays full and stressed. This is how natives tell them apart." },
+      { text: "A cup of coffee and a piece of bread.", tip: "'Of' reduces to 'uv' or even just 'uh' — 'cup of' = 'cuppa'. 'And' reduces to 'n' — 'bread and butter' = 'bread-n-butter'." },
+      { text: "I went to the bank to get some cash.", tip: "Unstressed 'to' becomes 'tuh' or 'tih' — never the full 'too' sound. Content words (bank, cash) stay strong; function words shrink." },
+      { text: "This gift is for you and for your sister.", tip: "'For' weakens to 'fer'; 'your' to 'yer'. Keep the stress on 'gift', 'you', and 'sister' — the skeleton of meaning." },
+    ],
+  },
+  {
+    id: "contractions",
+    title: "Reduced Forms: Gonna, Wanna, Hafta",
+    focus: "Casual speech contractions",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "I'm gonna grab a coffee before the meeting.", tip: "'Going to' = 'gonna' when followed by a verb. Do not use it before a place: 'I'm going to Paris' stays uncontracted." },
+      { text: "Do you wanna try the new Thai place tonight?", tip: "'Want to' = 'wanna'. Natural in statements and questions, but not in formal writing. The final A of 'wanna' is schwa, not full AH." },
+      { text: "I hafta finish this report by Friday.", tip: "'Have to' = 'hafta'; 'has to' = 'hasta'; 'had to' = 'hadta'. The V assimilates to F because the next sound is voiceless T." },
+      { text: "It's kinda cold, so I oughta bring a jacket.", tip: "'Kind of' = 'kinda', 'sort of' = 'sorta', 'ought to' = 'oughta'. These are real spoken forms, not sloppy speech — natives use them constantly." },
+    ],
+  },
+  {
+    id: "glottal-stops",
+    title: "Glottal Stops at Word Boundaries",
+    focus: "The catch in uh-oh",
+    level: "Intermediate",
+    accent: "American",
+    phrases: [
+      { text: "Uh-oh, I forgot to lock the front gate.", tip: "'Uh-oh' shows a pure glottal stop — the vocal cords snap shut momentarily. Americans use this same stop before vowel-initial stressed words for emphasis." },
+      { text: "I ate an apple and then an orange.", tip: "Before a stressed vowel, a small glottal closure can replace T or appear out of thin air — 'an apple' may get a tiny catch before 'apple' when emphasized." },
+      { text: "Wait a second, that isn't quite right.", tip: "'Isn't' often ends with a glottal stop instead of a released T: 'iz-n'. 'Quite right' may have a glottal replacing the first T entirely." },
+      { text: "I'll meet you at the fountain at eight.", tip: "Final T before a consonant or pause often becomes a glottal stop: 'eight' ends with a throat catch, not a released T. Very American, very natural." },
+    ],
+  },
+
+  // ───────────────────────────── WEEK 5 · Prosody and rhythm ─────────────────────────────
+  {
+    id: "sentence-stress",
+    title: "Content vs Function Words",
+    focus: "Strong beats carry meaning",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "We bought a new house by the beach last year.", tip: "Stress the content words: BOUGHT, HOUSE, BEACH, YEAR. Function words (we, a, by, the, last) stay quiet and quick. English prioritizes meaning, not equality." },
+      { text: "She always drinks coffee in the morning.", tip: "DRINKS, COFFEE, MORNING carry the weight; 'she', 'in', 'the' reduce. Stress should feel like drum beats at regular intervals." },
+      { text: "I'd love to learn a new language someday.", tip: "LOVE, LEARN, LANGUAGE, SOMEDAY are the hits. 'I'd', 'to', 'a', 'new' support but never compete. Listen for the musical shape of the strong beats." },
+      { text: "The report on the table is for the meeting.", tip: "REPORT, TABLE, MEETING — three beats. Everything else connects them. Say it robotically first, then smooth it out keeping only those three peaks." },
+    ],
+  },
+  {
+    id: "stress-timing",
+    title: "English Is Stress-Timed",
+    focus: "Equal time between stressed beats",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "DOGS chase CATS.", tip: "Three stressed syllables, roughly equal timing between them. English squeezes or stretches unstressed syllables to keep the beats even — a drummer's rhythm, not a metronome per syllable." },
+      { text: "The DOGS will chase the CATS.", tip: "Still two big beats on DOGS and CATS, same total time as before. 'The', 'will', 'the' compress to fit the rhythm. This is why function words shrink." },
+      { text: "The DOGS will have been chasing the CATS.", tip: "Same two beats, barely more total time. All the extra words squeeze between DOGS and CATS. Native rhythm means compressing these fillers hard." },
+      { text: "I WENT to the STORE and BOUGHT some BREAD.", tip: "Four beats, evenly spaced. Tap your hand on each capitalized word and make the other words fit the gap. That is stress-timing in practice." },
+    ],
+  },
+  {
+    id: "intonation-statements",
+    title: "Rising and Falling Intonation",
+    focus: "Where pitch lands",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "She finished the report last night.", tip: "Statements fall on the final stressed syllable — pitch peaks on NIGHT, then drops. A flat ending sounds robotic or uncertain to American ears." },
+      { text: "I really enjoyed the movie we saw.", tip: "Pitch rises through 'really enjoyed', peaks on MOVIE or SAW, then falls. The final fall signals 'I am done speaking' and sounds confident." },
+      { text: "He left his keys on the kitchen counter.", tip: "Main fall on COUNTER. Your pitch should noticeably dip to the bottom of your range on the last stressed syllable of a statement." },
+      { text: "We're meeting at six in the afternoon.", tip: "Peak on AFTERNOON, then drop. If you let the voice hover, it will sound like you are waiting for confirmation rather than stating a fact." },
+    ],
+  },
+  {
+    id: "intonation-questions",
+    title: "Yes/No vs Wh- Question Intonation",
+    focus: "Rising vs falling questions",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "Are you coming to the party tonight?", tip: "Yes/no questions rise at the end — pitch climbs through the final stressed word. The listener hears 'I need an answer'." },
+      { text: "Where did you leave your jacket?", tip: "Wh- questions usually fall at the end, like a statement — pitch peaks on JACKET and drops. Rising on a wh- question sounds surprised or skeptical." },
+      { text: "Did you finish the essay already?", tip: "Rising on ALREADY. Keep the body of the question relatively flat and save the pitch climb for the very last stressed syllable." },
+      { text: "Why didn't you call me back yesterday?", tip: "Fall on YESTERDAY. Wh-questions expect information, not a yes/no — the falling contour matches that expectation." },
+    ],
+  },
+  {
+    id: "list-intonation",
+    title: "List Intonation",
+    focus: "Rise-rise-rise-fall",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "We need eggs, milk, butter, and bread.", tip: "Lists rise on each non-final item and fall on the last one: eggs↑, milk↑, butter↑, and bread↓. The final fall tells the listener the list is complete." },
+      { text: "She speaks English, French, Spanish, and Japanese.", tip: "Every item gets a slight upward tilt except the last, which falls. Flat lists sound like you forgot an item." },
+      { text: "I went shopping, had lunch, and came home.", tip: "Three-clause list — same rule. The first two clauses rise, the final 'came home' falls. This pattern signals that you are finished." },
+      { text: "Would you like coffee, tea, or something else?", tip: "When a yes/no question contains a list, still rise-rise-fall inside the list. The overall question can also rise at the end for an open feel." },
+    ],
+  },
+  {
+    id: "emphatic-stress",
+    title: "Emphatic and Contrastive Stress",
+    focus: "Moving the meaning",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "I didn't say she stole the money.", tip: "Move the stress to any word and the meaning changes. Stress I = someone else said it; stress STOLE = she did something else with it; stress SHE = somebody else did it." },
+      { text: "I wanted the red one, not the blue one.", tip: "Contrastive stress lands hard on RED and BLUE. Pitch jumps up, volume rises, and the contrasted words become the rhythmic anchors of the sentence." },
+      { text: "She said Tuesday, not Thursday.", tip: "TUESDAY and THURSDAY both get exaggerated stress with a steep pitch rise. Everything else — 'she said', 'not' — compresses around these anchors." },
+      { text: "It's not the price, it's the principle.", tip: "PRICE and PRINCIPLE both get peak stress; 'it's not' and 'it's the' sink into the background. Native speakers use contrastive stress constantly for clarity." },
+    ],
+  },
+  {
+    id: "tone-units",
+    title: "Tone Units and Chunking",
+    focus: "Speaking in phrases, not words",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "When I got home // I turned on the lights.", tip: "Natural speech breaks into tone units of 3 to 7 words, each with one main stress. The pause between chunks is tiny but real — it gives the listener time to parse." },
+      { text: "My brother // who lives in Chicago // is visiting soon.", tip: "Embedded clauses form their own tone units. Each chunk has its own little melody that peaks and falls before the next starts." },
+      { text: "Honestly // I had no idea // it would rain today.", tip: "Sentence adverbs ('honestly') often form their own tone unit. This is how skilled speakers sound thoughtful instead of rushed." },
+      { text: "If you leave now // you might make the train.", tip: "Conditional clauses almost always form a tone unit that rises slightly, then the main clause falls. Practice the internal shape of each chunk." },
+    ],
+  },
+
+  // ───────────────────────────── WEEK 6 · Near-native polish ─────────────────────────────
+  {
+    id: "flap-t",
+    title: "The American Flap T",
+    focus: "Water → wader",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "I need a little water and some butter.", tip: "Between two vowels where the second is unstressed, T becomes a flap — tap your tongue tip once against the ridge behind your top teeth. It sounds almost exactly like a soft D." },
+      { text: "The writer sat at the city computer lab.", tip: "'Writer' = 'rider', 'city' = 'siddy', 'computer' = 'com-pyoo-der'. The flap also applies to D in the same position, so 'writer' and 'rider' can sound identical." },
+      { text: "I bought a pretty painting at an art auction.", tip: "'Pretty' = 'priddy', 'painting' often flaps the T after NT: 'paining'. Flaps are the single biggest marker of American rhythm." },
+      { text: "Get it out of the water right away.", tip: "Across word boundaries too: 'get it out' = 'gedi-dout', 'water right' keeps the flap. The flap chains words into one flowing unit." },
+    ],
+  },
+  {
+    id: "nasal-t",
+    title: "Nasal T and T-Dropping after N",
+    focus: "Important → impor'nt",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "That's an important international interview.", tip: "After N, T often drops entirely: 'important' = 'impor-nt' with a held N and no released T. 'International' = 'inernational'. This is standard American." },
+      { text: "I want to go to the center of town.", tip: "'Center' = 'senner'; 'want to' = 'wanna'. The T after N quietly disappears and the N just holds longer to fill the space." },
+      { text: "The interview with the dentist ran twenty minutes.", tip: "'Interview' = 'innerview', 'twenty' = 'twenny', 'dentist' usually keeps the T but softens it. This NT collapse is one of the top markers of native casual speech." },
+      { text: "I plan to print a painting for the winter party.", tip: "'Print' keeps both consonants at the end, but 'winter' = 'winner', 'painting' reduces the T toward a nasal. Unstressed NT is where the drop happens." },
+    ],
+  },
+  {
+    id: "dark-clear-l",
+    title: "Dark L vs Clear L",
+    focus: "Light at the start, dark at the end",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "Lily loves lemon lollipops in the afternoon.", tip: "At the start of a syllable, L is 'clear' — tongue tip on the ridge, bright vowel color. 'Lily' and 'loves' use clear L." },
+      { text: "The small hill felt cool in the shadow.", tip: "At the end of a syllable, L is 'dark' — pull the back of the tongue up and back, almost like adding a 'uh' before the L. 'Small', 'hill', 'cool' are all dark." },
+      { text: "I'll still call you later about the deal.", tip: "'I'll', 'still', 'call', 'later', 'deal' — every one of these has a dark L. Americans often darken so heavily that the L sounds almost like a W: 'milk' → 'miwk'." },
+      { text: "People rarely travel fully prepared for real problems.", tip: "Dark L inside a word — 'people', 'travel', 'real', 'problems' — still needs the back-of-tongue lift. Learners who use clear L everywhere sound slightly foreign immediately." },
+    ],
+  },
+  {
+    id: "tr-dr-affrication",
+    title: "TR and DR Affrication",
+    focus: "Tree → chree, dream → jream",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "The train travels through the troubled tropics.", tip: "American TR sounds almost like CHR: 'train' = 'chrain', 'tree' = 'chree'. The T palatalizes when the R pulls the tongue back. Do not fight this — it is native." },
+      { text: "I had a dream about drinking orange juice.", tip: "DR sounds almost like JR: 'dream' = 'jream', 'drinking' = 'jrinking'. The D and R fuse into a single affricated sound. Very American." },
+      { text: "The truck driver tried a different route.", tip: "'Truck' = 'chruck', 'driver' = 'jriver', 'tried' = 'chried'. Four affricated onsets in a row — this is one of the least-taught native features." },
+      { text: "I traveled to a dry stretch of desert.", tip: "'Traveled' and 'dry' both affricate. Even careful speakers lean into this — it is not a shortcut, it is standard American phonology." },
+    ],
+  },
+  {
+    id: "vowel-reduction",
+    title: "Vowel Reduction in Fast Speech",
+    focus: "Full vowels collapse to schwa",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "I'm gonna grab a bite and head out soon.", tip: "In fast speech, 'I'm', 'a', 'and', 'out' all collapse toward schwa. Only the content words — GRAB, BITE, HEAD — keep their full vowel quality." },
+      { text: "He said he'd be here in about an hour.", tip: "'He'd be here in about an hour' compresses hard — 'hee-dbee-here-nuh-bou-tan-our'. Content words: HERE, HOUR. Everything else reduces." },
+      { text: "There's a package waiting for you at the door.", tip: "'There's', 'a', 'for', 'you', 'at', 'the' all reduce. Native fluency is not about speed — it is about how much you shrink the in-between words." },
+      { text: "You should have told me before we left.", tip: "'Should have' = 'shoulda', 'me' reduces, 'we' reduces. The sentence collapses to 'you-shoulda-TOLD-mi-before-we-LEFT'. Two big beats, everything else squeezed." },
+    ],
+  },
+  {
+    id: "uptalk",
+    title: "Uptalk and HRT Patterns",
+    focus: "Rising pitch on statements",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "So I was walking to the store? And I saw her?", tip: "High Rising Terminal — rising pitch on statements to check the listener is following. Common in casual American storytelling. Use sparingly; overuse sounds uncertain." },
+      { text: "My name is Alex? I'm from Seattle?", tip: "The rise here signals 'are you with me?' rather than a real question. Keep the rise small — a full question rise sounds like you are unsure of your own name." },
+      { text: "We went to this place downtown? It was amazing.", tip: "Notice the alternating pattern — one clause rises (HRT), the next falls definitively. This rhythm is textbook American casual speech, especially in 20s–30s speakers." },
+      { text: "I was thinking about that movie? The one with the car chase?", tip: "Uptalk is often used for soft list-building in conversation. The final clause can fall or keep rising depending on whether you want the listener to take the floor." },
+    ],
+  },
+  {
+    id: "casual-phrases",
+    title: "High-Frequency Casual Phrases",
+    focus: "What-do-you, I-don't-know",
+    level: "Advanced",
+    accent: "American",
+    phrases: [
+      { text: "What do you think about the whole situation?", tip: "'What do you' collapses to 'wuddaya' — the T flaps, 'do' reduces, 'you' becomes 'ya'. This is probably the most common three-word compression in English." },
+      { text: "What are you doing this weekend?", tip: "'What are you doing' = 'wuh-chu-doin'. The T flaps into CH through the Y of 'you', and 'doing' drops its G. Three reductions in one chunk." },
+      { text: "I don't know what you want me to say.", tip: "'I don't know' often becomes 'I-dunno' with a falling-rising melody. 'Want me to' = 'wanna'. Native phrases like this need to be learned as whole rhythmic units." },
+      { text: "You know what I mean, right?", tip: "'You know what I mean' = 'ya-know-whuddai-mean'. This is a fixed conversational chunk — practice the whole phrase as a single piece, not five words." },
+    ],
+  },
+];
+
+export function getLesson(id: string): Lesson | undefined {
+  return LESSONS.find((l) => l.id === id);
+}

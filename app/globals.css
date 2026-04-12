@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: #0a0a0f;
+  color: #f5f5f7;
+  min-height: 100%;
+}
+
+body {
+  background: radial-gradient(ellipse at top, #1a0f2e 0%, #0a0a0f 50%);
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-full font-semibold transition-transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+.card {
+  @apply bg-panel border border-border rounded-2xl;
+}
