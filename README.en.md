@@ -257,7 +257,13 @@ If you hit the limits, upgrading to the Standard S0 tier is pay-as-you-go at abo
 
 ## License
 
-MIT. Do whatever you want with the code. The lesson content was written specifically for this project and you're free to adapt it.
+This project is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+- **You may**: copy, modify, and redistribute for personal and non-commercial use
+- **You must**: give credit to the original author, indicate changes, and release derivative works under the same license (ShareAlike)
+- **You may not**: use this project for any commercial purpose (including but not limited to charging fees, ad monetization, or paid add-ons)
+
+For commercial licensing, contact the project author.
 
 ---
 
