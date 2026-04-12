@@ -4,6 +4,8 @@ An English pronunciation coaching app for iPhone. Pick a lesson, listen to a nat
 
 Built with Next.js (backend) and Expo / React Native (mobile). Runs on your phone via Expo Go, no Apple Developer account required.
 
+*中文版: [README.zh.md](README.zh.md)*
+
 ---
 
 ## Features
