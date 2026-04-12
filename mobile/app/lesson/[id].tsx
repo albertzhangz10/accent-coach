@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { getLesson } from "@/lib/lessons";
 import { Recorder } from "@/components/Recorder";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
-import { recordAttempt } from "@/lib/progress";
+import { recordAttempt, markLessonCompleted } from "@/lib/progress";
 import type { AttemptScore } from "@/lib/api";
 
 export default function LessonScreen() {
@@ -17,6 +18,7 @@ export default function LessonScreen() {
   const [score, setScore] = useState<AttemptScore | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const prevScoreRef = useRef<AttemptScore | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (score && !prevScoreRef.current) {
@@ -76,46 +78,62 @@ export default function LessonScreen() {
     setScore(null);
   }
 
-  function finish() {
+  async function finish() {
     Haptics.selectionAsync().catch(() => {});
+    try {
+      await markLessonCompleted(lesson!.id);
+    } catch {
+      // Non-fatal — still navigate back.
+    }
     if (router.canGoBack()) router.back();
     else router.replace("/");
   }
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-    >
+    <View style={styles.root}>
       <Stack.Screen options={{ title: headerTitle }} />
-      <Text style={styles.focus}>{lesson.focus}</Text>
-      <View style={styles.progress}>
-        {lesson.phrases.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.progressBar,
-              i < phraseIdx && styles.progressDone,
-              i === phraseIdx && styles.progressActive,
-            ]}
-          />
-        ))}
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.phraseLabel}>
-          PHRASE {phraseIdx + 1} OF {lesson.phrases.length}
-        </Text>
-        <Text style={styles.phraseText}>{phrase.text}</Text>
-        <View style={styles.tipBox}>
-          <Text style={styles.tip}>{"\uD83D\uDCA1  "}{phrase.tip}</Text>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.focus}>{lesson.focus}</Text>
+        <View style={styles.progress}>
+          {lesson.phrases.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.progressBar,
+                i < phraseIdx && styles.progressDone,
+                i === phraseIdx && styles.progressActive,
+              ]}
+            />
+          ))}
         </View>
-      </View>
-      {!score ? (
-        <Recorder reference={phrase.text} onScored={handleScored} />
-      ) : (
-        <View style={{ gap: 20 }}>
+        <View style={styles.card}>
+          <Text style={styles.phraseLabel}>
+            PHRASE {phraseIdx + 1} OF {lesson.phrases.length}
+          </Text>
+          <Text style={styles.phraseText}>{phrase.text}</Text>
+          <View style={styles.tipBox}>
+            <Text style={styles.tip}>{"\uD83D\uDCA1  "}{phrase.tip}</Text>
+          </View>
+        </View>
+        {score ? (
           <ScoreDisplay score={score} reference={phrase.text} />
+        ) : null}
+      </ScrollView>
+
+      <View
+        style={[
+          styles.actionBar,
+          { paddingBottom: Math.max(insets.bottom, 12) + 12 },
+        ]}
+      >
+        {!score ? (
+          <Recorder reference={phrase.text} onScored={handleScored} />
+        ) : (
           <View style={styles.actions}>
             {!isLast ? (
               <Pressable
@@ -148,15 +166,23 @@ export default function LessonScreen() {
               <Text style={styles.tryAgainText}>↺ Try again</Text>
             </Pressable>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#0a0a0f" },
   scroll: { flex: 1, backgroundColor: "#0a0a0f" },
-  content: { padding: 20, gap: 20, paddingBottom: 60 },
+  content: { padding: 20, gap: 20, paddingBottom: 24 },
+  actionBar: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    backgroundColor: "#0a0a0f",
+    borderTopWidth: 1,
+    borderTopColor: "#26262f",
+  },
   centered: {
     flex: 1,
     alignItems: "center",

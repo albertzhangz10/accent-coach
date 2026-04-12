@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
-import { router, Stack } from "expo-router";
+import { router, Stack, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { LESSONS } from "@/lib/lessons";
-import { loadProgress, lessonBest, type Progress } from "@/lib/progress";
+import {
+  loadProgress,
+  lessonBest,
+  isLessonCompleted,
+  type Progress,
+} from "@/lib/progress";
 import { isOnboarded } from "@/lib/settings";
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -23,8 +28,21 @@ export default function Home() {
     isOnboarded().then((done) => {
       if (!done) router.replace("/onboarding");
     });
-    loadProgress().then(setProgress);
   }, []);
+
+  // Reload progress every time the screen regains focus so completion badges
+  // update immediately after finishing a lesson.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      loadProgress().then((p) => {
+        if (!cancelled) setProgress(p);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   const grouped = useMemo(() => {
     const out: Record<Level, typeof LESSONS> = {
@@ -114,6 +132,9 @@ export default function Home() {
         {LEVEL_ORDER.map((level) => {
           const lessons = grouped[level];
           if (lessons.length === 0) return null;
+          const doneCount = progress
+            ? lessons.filter((l) => isLessonCompleted(progress, l.id)).length
+            : 0;
           return (
             <View key={level} style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -127,12 +148,17 @@ export default function Home() {
                   {level.toUpperCase()}
                 </Text>
                 <Text style={styles.sectionCount}>
-                  {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+                  {progress
+                    ? `${doneCount} / ${lessons.length} done`
+                    : `${lessons.length} lessons`}
                 </Text>
               </View>
               <View style={styles.lessons}>
                 {lessons.map((lesson) => {
                   const best = progress ? lessonBest(progress, lesson.id) : null;
+                  const completed = progress
+                    ? isLessonCompleted(progress, lesson.id)
+                    : false;
                   const highlightFirst =
                     isNewUser && lesson.id === firstBeginnerId;
                   const accessibilityLabel = [
@@ -140,6 +166,7 @@ export default function Home() {
                     lesson.level,
                     `${lesson.phrases.length} phrases`,
                     lesson.accent,
+                    completed ? "completed" : null,
                     best !== null ? `best score ${best}` : null,
                   ]
                     .filter(Boolean)
@@ -150,6 +177,7 @@ export default function Home() {
                       style={({ pressed }) => [
                         styles.card,
                         highlightFirst && styles.cardHighlight,
+                        completed && styles.cardCompleted,
                         pressed && styles.cardPressed,
                       ]}
                       onPress={() => openLesson(lesson.id, lesson.title)}
@@ -173,11 +201,23 @@ export default function Home() {
                             {lesson.level.toUpperCase()}
                           </Text>
                         </View>
-                        {best !== null && (
-                          <View style={styles.bestBadge}>
-                            <Text style={styles.bestBadgeText}>★ {best}</Text>
-                          </View>
-                        )}
+                        <View style={styles.badgeRow}>
+                          {completed ? (
+                            <View style={styles.doneBadge}>
+                              <Ionicons
+                                name="checkmark"
+                                size={12}
+                                color="#6ee7b7"
+                              />
+                              <Text style={styles.doneBadgeText}>Done</Text>
+                            </View>
+                          ) : null}
+                          {best !== null ? (
+                            <View style={styles.bestBadge}>
+                              <Text style={styles.bestBadgeText}>★ {best}</Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
                       <Text style={styles.cardTitle}>{lesson.title}</Text>
                       <Text style={styles.cardFocus}>{lesson.focus}</Text>
@@ -301,7 +341,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: "rgba(124,92,255,0.06)",
   },
+  cardCompleted: {
+    borderColor: "rgba(110,231,183,0.5)",
+    backgroundColor: "rgba(110,231,183,0.05)",
+  },
   cardPressed: { borderColor: "#7c5cff", transform: [{ scale: 0.99 }] },
+  badgeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  doneBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingLeft: 8,
+    paddingRight: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(110,231,183,0.5)",
+    backgroundColor: "rgba(110,231,183,0.14)",
+  },
+  doneBadgeText: { color: "#6ee7b7", fontSize: 11, fontWeight: "800" },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

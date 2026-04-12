@@ -10,18 +10,23 @@ export type VoiceOption = {
   gender: "F" | "M";
 };
 
+// IDs must match the backend `ALLOWED_VOICES` set in `app/api/tts/route.ts`.
+// The backend rejects any unknown voice and silently falls back to its default,
+// which made the picker appear broken when we previously stored short names
+// like "jenny" here.
 export const VOICE_OPTIONS: VoiceOption[] = [
-  { id: "jenny", label: "Jenny", accent: "US", gender: "F" },
-  { id: "aria", label: "Aria", accent: "US", gender: "F" },
-  { id: "guy", label: "Guy", accent: "US", gender: "M" },
-  { id: "davis", label: "Davis", accent: "US", gender: "M" },
-  { id: "tony", label: "Tony", accent: "US", gender: "M" },
-  { id: "amber", label: "Amber", accent: "US", gender: "F" },
-  { id: "sonia", label: "Sonia", accent: "UK", gender: "F" },
-  { id: "ryan", label: "Ryan", accent: "UK", gender: "M" },
+  { id: "en-US-JennyNeural", label: "Jenny", accent: "US", gender: "F" },
+  { id: "en-US-AriaNeural", label: "Aria", accent: "US", gender: "F" },
+  { id: "en-US-AmberNeural", label: "Amber", accent: "US", gender: "F" },
+  { id: "en-US-AnaNeural", label: "Ana", accent: "US", gender: "F" },
+  { id: "en-US-GuyNeural", label: "Guy", accent: "US", gender: "M" },
+  { id: "en-US-DavisNeural", label: "Davis", accent: "US", gender: "M" },
+  { id: "en-US-TonyNeural", label: "Tony", accent: "US", gender: "M" },
+  { id: "en-GB-SoniaNeural", label: "Sonia", accent: "UK", gender: "F" },
+  { id: "en-GB-RyanNeural", label: "Ryan", accent: "UK", gender: "M" },
 ];
 
-export const DEFAULT_VOICE = "jenny";
+export const DEFAULT_VOICE = "en-US-JennyNeural";
 
 // In-memory cache so `speakNative()` can read the selection synchronously
 // once it has been loaded once. Kept in sync by loadVoice/saveVoice.

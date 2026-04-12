@@ -38,6 +38,15 @@ function formatDuration(ms: number): string {
 
 const MAX_DURATION_MS = 20_000;
 const MIN_DURATION_MS = 800;
+// Minimum peak audio level (dB) that counts as "the user actually spoke".
+// expo-audio metering ranges ~[-160, 0] where 0 is the loudest. Normal speech
+// peaks around -30 to -10 dB; ambient silence sits below -50 dB.
+const SILENCE_THRESHOLD_DB = -45;
+// Delay between prepareToRecordAsync() and record() so iOS fully flips the
+// audio session from Playback to Record before the first sample is written.
+// At 250ms we still occasionally saw ~100ms of silence at the top of the
+// recording; 400ms is boring but bulletproof on iPhone 12 and later.
+const AUDIO_SESSION_SETTLE_MS = 400;
 
 export function Recorder({ reference, onScored }: Props) {
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
@@ -51,6 +60,7 @@ export function Recorder({ reference, onScored }: Props) {
   const cancelledRef = useRef(false);
   const speakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotionRef = useRef(false);
+  const peakMeteringRef = useRef<number>(-160);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled()
@@ -124,17 +134,26 @@ export function Recorder({ reference, onScored }: Props) {
     };
   }, [state, pulse]);
 
-  // Max-duration auto-stop.
+  // Max-duration auto-stop + track the peak metering level across the session
+  // so we can detect silent recordings before uploading them.
   useEffect(() => {
-    if (state === "recording" && recState.durationMillis > MAX_DURATION_MS) {
+    if (state !== "recording") return;
+    if (
+      typeof recState.metering === "number" &&
+      recState.metering > peakMeteringRef.current
+    ) {
+      peakMeteringRef.current = recState.metering;
+    }
+    if (recState.durationMillis > MAX_DURATION_MS) {
       stop();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recState.durationMillis, state]);
+  }, [recState.durationMillis, recState.metering, state]);
 
   async function start() {
     setError(null);
     cancelledRef.current = false;
+    peakMeteringRef.current = -160;
     try {
       const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
@@ -143,12 +162,19 @@ export function Recorder({ reference, onScored }: Props) {
         setState("denied");
         return;
       }
+      // Stop any currently playing TTS so it doesn't bleed into the recording
+      // and so the audio session can cleanly flip to record mode.
+      stopSpeaking();
       await setAudioModeAsync({
         allowsRecording: true,
         interruptionMode: "doNotMix",
         playsInSilentMode: true,
       });
       await recorder.prepareToRecordAsync();
+      // Let iOS finish flipping from Playback to Record mode before we start
+      // capturing. Without this, the first ~300ms is often silence and Azure
+      // returns all-Omission.
+      await new Promise((r) => setTimeout(r, AUDIO_SESSION_SETTLE_MS));
       recorder.record();
       setState("recording");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -163,11 +189,24 @@ export function Recorder({ reference, onScored }: Props) {
     setState("processing");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const durationAtStop = recState.durationMillis;
+    const peakAtStop = peakMeteringRef.current;
     try {
       await recorder.stop();
 
       if (durationAtStop > 0 && durationAtStop < MIN_DURATION_MS) {
         setError("Hold longer — say the whole phrase.");
+        setState("error");
+        return;
+      }
+
+      // Local silence check: if we never saw audio above the threshold, don't
+      // even bother uploading. Saves a 10-second Azure round-trip and the
+      // resulting garbage scores. Threshold only applies when metering
+      // actually produced values (peak > -160, the default).
+      if (peakAtStop > -160 && peakAtStop < SILENCE_THRESHOLD_DB) {
+        setError(
+          "We didn't hear you — speak a bit louder and try again."
+        );
         setState("error");
         return;
       }
@@ -205,6 +244,30 @@ export function Recorder({ reference, onScored }: Props) {
     setState("idle");
     setError(null);
     Haptics.selectionAsync().catch(() => {});
+  }
+
+  // Aborts an in-flight recording without uploading. Unlike stop(), this path
+  // never calls scoreAudio and never shows a score — the audio buffer is
+  // discarded and we go straight back to idle so the user can re-record.
+  async function cancelRecording() {
+    if (state !== "recording") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      await recorder.stop();
+    } catch {
+      // The recorder may already be torn down; ignore.
+    }
+    peakMeteringRef.current = -160;
+    setState("idle");
+    setError(null);
+    // Restore the audio session so TTS playback routes to the loud speaker
+    // immediately — otherwise the next Listen tap would play through the
+    // earpiece.
+    setAudioModeAsync({
+      allowsRecording: false,
+      interruptionMode: "mixWithOthers",
+      playsInSilentMode: true,
+    }).catch(() => {});
   }
 
   function playReference() {
@@ -271,22 +334,35 @@ export function Recorder({ reference, onScored }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Pressable
-          style={[styles.listenBtn, isSpeaking && styles.listenBtnBusy]}
-          onPress={playReference}
-          disabled={isSpeaking}
-          accessibilityRole="button"
-          accessibilityLabel="Listen to reference phrase"
-          accessibilityHint="Plays the phrase spoken by a native voice"
-          accessibilityState={{ disabled: isSpeaking, busy: isSpeaking }}
-        >
-          {isSpeaking ? (
-            <ActivityIndicator color="#c4b5fd" size="small" />
-          ) : (
-            <Ionicons name="volume-high" size={16} color="#e5e5ea" />
-          )}
-          <Text style={styles.listenText}>Listen</Text>
-        </Pressable>
+        {state === "recording" ? (
+          <Pressable
+            style={styles.cancelBtn}
+            onPress={cancelRecording}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel recording"
+            accessibilityHint="Discards this recording without scoring it"
+          >
+            <Ionicons name="close" size={16} color="#d4d4d8" />
+            <Text style={styles.cancelBtnText}>Cancel</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.listenBtn, isSpeaking && styles.listenBtnBusy]}
+            onPress={playReference}
+            disabled={isSpeaking}
+            accessibilityRole="button"
+            accessibilityLabel="Listen to reference phrase"
+            accessibilityHint="Plays the phrase spoken by a native voice"
+            accessibilityState={{ disabled: isSpeaking, busy: isSpeaking }}
+          >
+            {isSpeaking ? (
+              <ActivityIndicator color="#c4b5fd" size="small" />
+            ) : (
+              <Ionicons name="volume-high" size={16} color="#e5e5ea" />
+            )}
+            <Text style={styles.listenText}>Listen</Text>
+          </Pressable>
+        )}
 
         {state === "recording" ? (
           <Animated.View style={{ transform: [{ scale: pulse }] }}>
@@ -294,8 +370,8 @@ export function Recorder({ reference, onScored }: Props) {
               style={[styles.recordBtn, styles.stopBtn]}
               onPress={stop}
               accessibilityRole="button"
-              accessibilityLabel="Stop recording"
-              accessibilityHint="Stops recording and scores your attempt"
+              accessibilityLabel="Stop and score"
+              accessibilityHint="Stops recording and sends it for scoring"
             >
               <Text style={styles.recordText}>Stop</Text>
             </Pressable>
@@ -355,6 +431,19 @@ const styles = StyleSheet.create({
   },
   listenBtnBusy: { opacity: 0.75 },
   listenText: { color: "#e5e5ea", fontWeight: "600" },
+  cancelBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: "#14141c",
+    borderWidth: 1,
+    borderColor: "#3f3f46",
+    minHeight: 44,
+  },
+  cancelBtnText: { color: "#d4d4d8", fontWeight: "700", fontSize: 14 },
   recordBtn: {
     paddingHorizontal: 32,
     paddingVertical: 18,

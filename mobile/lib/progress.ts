@@ -7,6 +7,7 @@ export type Progress = {
   lastPracticeDate: string | null;
   lessonScores: Record<string, number[]>;
   totalPhrasesSpoken: number;
+  completedLessons: string[];
 };
 
 const empty: Progress = {
@@ -14,15 +15,23 @@ const empty: Progress = {
   lastPracticeDate: null,
   lessonScores: {},
   totalPhrasesSpoken: 0,
+  completedLessons: [],
 };
 
 export async function loadProgress(): Promise<Progress> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return empty;
-    return { ...empty, ...JSON.parse(raw) };
+    if (!raw) return { ...empty, completedLessons: [] };
+    const parsed = JSON.parse(raw);
+    return {
+      ...empty,
+      ...parsed,
+      completedLessons: Array.isArray(parsed.completedLessons)
+        ? parsed.completedLessons
+        : [],
+    };
   } catch {
-    return empty;
+    return { ...empty, completedLessons: [] };
   }
 }
 
@@ -58,4 +67,17 @@ export function lessonBest(p: Progress, lessonId: string): number | null {
   const arr = p.lessonScores[lessonId];
   if (!arr || arr.length === 0) return null;
   return Math.max(...arr);
+}
+
+export function isLessonCompleted(p: Progress, lessonId: string): boolean {
+  return p.completedLessons.includes(lessonId);
+}
+
+export async function markLessonCompleted(lessonId: string): Promise<Progress> {
+  const p = await loadProgress();
+  if (!p.completedLessons.includes(lessonId)) {
+    p.completedLessons = [...p.completedLessons, lessonId];
+    await saveProgress(p);
+  }
+  return p;
 }

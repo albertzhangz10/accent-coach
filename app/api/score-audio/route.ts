@@ -15,13 +15,29 @@ type PhonemeScore = {
   alternatives?: PhonemeAlternative[];
 };
 
+type SyllableScore = {
+  syllable: string; // phonetic
+  grapheme: string; // orthographic (e.g., "ba" in "banana")
+  score: number;
+};
+
+type ProsodyFeedback = {
+  breakErrorTypes?: string[];
+  breakLengthMs?: number;
+  intonationErrorTypes?: string[];
+  monotone?: boolean;
+};
+
 type WordScore = {
   word: string;
   score: number;
   status: WordStatus;
   errorType?: string;
   worstPhoneme?: { phoneme: string; score: number; arpabet?: string } | null;
+  worstSyllable?: { grapheme: string; score: number } | null;
   phonemes?: PhonemeScore[];
+  syllables?: SyllableScore[];
+  prosodyFeedback?: ProsodyFeedback;
 };
 
 /**
@@ -63,6 +79,116 @@ function parseWavHeader(bytes: Uint8Array) {
     offset = dataStart + size + (size % 2);
   }
   return { riff, wave, valid: false as const };
+}
+
+/**
+ * Find the `data` chunk inside a RIFF WAV. Returns offset of the PCM bytes and
+ * the declared chunk size, or null if the chunk isn't found.
+ */
+function findDataChunk(
+  bytes: Uint8Array
+): { dataOffset: number; dataSize: number } | null {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const id = String.fromCharCode(...Array.from(bytes.slice(offset, offset + 4)));
+    const size = dv.getUint32(offset + 4, true);
+    if (id === "data") return { dataOffset: offset + 8, dataSize: size };
+    offset = offset + 8 + size + (size % 2);
+  }
+  return null;
+}
+
+/**
+ * Trim leading and trailing silence from a 16-bit PCM WAV. Cuts away dead air
+ * from before the user actually started speaking (often 200-400ms on iOS due
+ * to audio session transition lag) and any trailing silence before Stop. This
+ * improves Azure's fluency scoring because it no longer has to explain the
+ * gaps, and speeds up recognition because there's less audio to process.
+ *
+ * Anything above ~1% of full scale counts as audio. Keeps a 60ms guard band on
+ * each side so we never clip real speech onsets.
+ *
+ * Returns the original bytes unchanged if the file isn't 16-bit PCM, doesn't
+ * have a data chunk, or is entirely silent (the silent-audio detector later
+ * will catch that case explicitly).
+ */
+function trimSilence(bytes: Uint8Array): Uint8Array {
+  const header = parseWavHeader(bytes);
+  if (!header || !header.valid) return bytes;
+  if (header.audioFormat !== 1) return bytes; // only raw PCM
+  if (header.bitsPerSample !== 16) return bytes;
+
+  const chunk = findDataChunk(bytes);
+  if (!chunk) return bytes;
+  const { dataOffset, dataSize } = chunk;
+  if (dataOffset + dataSize > bytes.length) return bytes;
+
+  const channels = header.channels || 1;
+  const bytesPerFrame = 2 * channels;
+  const totalFrames = Math.floor(dataSize / bytesPerFrame);
+  if (totalFrames < header.sampleRate * 0.1) return bytes; // <100ms; skip
+
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const threshold = Math.floor(0x7fff * 0.012); // ~1.2% of full scale
+
+  // Find first and last frame with any channel above threshold.
+  let firstFrame = -1;
+  for (let i = 0; i < totalFrames; i++) {
+    const base = dataOffset + i * bytesPerFrame;
+    let peak = 0;
+    for (let c = 0; c < channels; c++) {
+      const s = Math.abs(dv.getInt16(base + c * 2, true));
+      if (s > peak) peak = s;
+    }
+    if (peak > threshold) {
+      firstFrame = i;
+      break;
+    }
+  }
+  if (firstFrame < 0) return bytes; // entirely silent
+
+  let lastFrame = totalFrames - 1;
+  for (let i = totalFrames - 1; i >= 0; i--) {
+    const base = dataOffset + i * bytesPerFrame;
+    let peak = 0;
+    for (let c = 0; c < channels; c++) {
+      const s = Math.abs(dv.getInt16(base + c * 2, true));
+      if (s > peak) peak = s;
+    }
+    if (peak > threshold) {
+      lastFrame = i;
+      break;
+    }
+  }
+
+  const guardFrames = Math.floor(header.sampleRate * 0.06); // 60ms
+  firstFrame = Math.max(0, firstFrame - guardFrames);
+  lastFrame = Math.min(totalFrames - 1, lastFrame + guardFrames);
+
+  const keptFrames = lastFrame - firstFrame + 1;
+  // Only rewrite if we're actually saving meaningful bytes (>= 80ms trimmed).
+  const savedFrames = totalFrames - keptFrames;
+  if (savedFrames < header.sampleRate * 0.08) return bytes;
+
+  const newDataSize = keptFrames * bytesPerFrame;
+  const out = new Uint8Array(dataOffset + newDataSize);
+  out.set(bytes.slice(0, dataOffset), 0);
+  const outDv = new DataView(out.buffer);
+  // Update `data` chunk size (the 4 bytes immediately before dataOffset).
+  outDv.setUint32(dataOffset - 4, newDataSize, true);
+  // Update RIFF total size at offset 4 (file size - 8).
+  outDv.setUint32(4, out.length - 8, true);
+  // Copy the kept PCM window.
+  out.set(
+    bytes.slice(
+      dataOffset + firstFrame * bytesPerFrame,
+      dataOffset + (lastFrame + 1) * bytesPerFrame
+    ),
+    dataOffset
+  );
+
+  return out;
 }
 
 function normalizeWords(s: string): string[] {
@@ -208,24 +334,37 @@ function ipaToArpabet(raw: string | undefined | null): string | undefined {
 }
 
 /**
- * Simple retry-with-backoff around fetch for transient Azure hiccups.
- * Retries 5xx responses and network errors. Returns the final Response so the
- * caller can handle non-retryable failures (4xx) themselves.
+ * Retry-with-backoff + per-attempt timeout around fetch. Azure occasionally
+ * stalls for 10+ seconds when handed near-silent audio (it keeps trying to
+ * recognize nothing); an 8-second timeout lets us fail fast and show a useful
+ * error instead of a mystery hang. Retries 5xx responses, network errors, and
+ * aborts.
  */
+const AZURE_FETCH_TIMEOUT_MS = 8000;
+
 async function fetchWithRetry(
   url: string,
   init: RequestInit,
   retries = 2,
-  delaysMs = [300, 900]
+  delaysMs = [300, 900],
+  timeoutMs = AZURE_FETCH_TIMEOUT_MS
 ): Promise<Response> {
   let lastErr: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await fetch(url, init);
+      const res = await fetch(url, { ...init, signal: ctrl.signal });
+      clearTimeout(timer);
       if (res.ok || res.status < 500) return res;
       lastErr = new Error(`HTTP ${res.status}`);
-    } catch (e) {
-      lastErr = e;
+    } catch (e: any) {
+      clearTimeout(timer);
+      if (e?.name === "AbortError") {
+        lastErr = new Error(`Azure timeout after ${timeoutMs}ms`);
+      } else {
+        lastErr = e;
+      }
     }
     if (attempt < retries) {
       const wait = delaysMs[attempt] ?? 900;
@@ -261,8 +400,19 @@ export async function POST(req: Request) {
   }
 
   const header = parseWavHeader(audioBytes);
+  // Strip leading/trailing silence before sending to Azure. This is the
+  // single biggest accuracy-and-latency win we can make on the server side.
+  const trimmedBytes = trimSilence(audioBytes);
+  const trimmedMs =
+    header && header.valid && header.sampleRate > 0
+      ? Math.round(
+          ((audioBytes.length - trimmedBytes.length) /
+            (header.sampleRate * (header.channels || 1) * 2)) *
+            1000
+        )
+      : 0;
   console.log(
-    `[score-audio] ${audioBytes.length} bytes | header:`,
+    `[score-audio] ${audioBytes.length}b → ${trimmedBytes.length}b (trimmed ${trimmedMs}ms) | header:`,
     header,
     `| ref: "${reference}"`
   );
@@ -294,7 +444,7 @@ export async function POST(req: Request) {
         "Pronunciation-Assessment": paHeader,
         Accept: "application/json",
       },
-      body: audioBytes,
+      body: trimmedBytes,
     });
   } catch (e: any) {
     console.error(`[score-audio] network error:`, e?.message);
@@ -315,6 +465,25 @@ export async function POST(req: Request) {
 
   const data = await azureRes.json();
   console.log(`[score-audio] Azure response:`, JSON.stringify(data).slice(0, 2000));
+
+  // Azure's own silence-timeout signals. These happen when the audio contains
+  // only (or mostly) silence. Surface a clean error instead of falling back
+  // to Levenshtein which produces garbage scores on silent audio.
+  if (
+    data.RecognitionStatus === "InitialSilenceTimeout" ||
+    data.RecognitionStatus === "BabbleTimeout" ||
+    data.RecognitionStatus === "NoMatch"
+  ) {
+    console.warn(`[score-audio] silent/noise audio: ${data.RecognitionStatus}`);
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't hear your voice clearly. Move somewhere quieter and speak right after you tap Record.",
+        code: "SILENT_AUDIO",
+      },
+      { status: 422 }
+    );
+  }
 
   if (data.RecognitionStatus && data.RecognitionStatus !== "Success") {
     return NextResponse.json(
@@ -341,6 +510,34 @@ export async function POST(req: Request) {
     pronScore + accuracyScore > 0;
 
   const transcript = best.Display ?? data.DisplayText ?? "";
+
+  // Heuristic: even when Azure says "Success", if the displayed text is empty
+  // or just punctuation AND every word is marked Omission, Azure actually
+  // heard nothing. This is the exact shape of the "first ~500ms was silent
+  // because the audio session hadn't flipped" bug. Treat it as silent audio.
+  const bestWords = (best?.Words ?? []) as any[];
+  const allOmitted =
+    bestWords.length > 0 &&
+    bestWords.every(
+      (w) =>
+        (w?.ErrorType ?? w?.PronunciationAssessment?.ErrorType) === "Omission"
+    );
+  const emptyTranscript =
+    !transcript || /^[\s.,!?…]*$/.test(transcript);
+
+  if (allOmitted || (emptyTranscript && !hasRealScores)) {
+    console.warn(
+      `[score-audio] empty result (allOmitted=${allOmitted}, emptyTranscript=${emptyTranscript})`
+    );
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't hear your voice. Speak a bit louder and start right after you tap Record.",
+        code: "SILENT_AUDIO",
+      },
+      { status: 422 }
+    );
+  }
 
   if (!hasRealScores) {
     console.warn(`[score-audio] Azure returned no pronunciation scores. Using fallback.`);
@@ -393,24 +590,132 @@ export async function POST(req: Request) {
       }
     }
 
+    // Per-syllable scores. Azure returns phonetic + grapheme form (e.g.,
+    // "ba" / "bae" for the first syllable of "banana"). Surfaces which chunk
+    // of a multi-syllable word is the actual weak point.
+    const rawSyllables = (w?.Syllables ?? []) as any[];
+    const syllables: SyllableScore[] = rawSyllables.map((s) => ({
+      syllable: s?.Syllable ?? "",
+      grapheme: s?.Grapheme ?? "",
+      score: Math.round(
+        s?.AccuracyScore ?? s?.PronunciationAssessment?.AccuracyScore ?? 100
+      ),
+    }));
+    let worstSyllable: WordScore["worstSyllable"] = null;
+    for (const s of syllables) {
+      if (!worstSyllable || s.score < worstSyllable.score) {
+        worstSyllable = { grapheme: s.grapheme, score: s.score };
+      }
+    }
+
+    // Prosody feedback: break + intonation errors Azure flags per word.
+    const fp = w?.Feedback?.Prosody ?? w?.PronunciationAssessment?.Feedback?.Prosody;
+    let prosodyFeedback: ProsodyFeedback | undefined;
+    if (fp) {
+      const breakErrs = (fp?.Break?.ErrorTypes ?? []).filter(
+        (t: string) => t && t !== "None"
+      );
+      const intErrs = (fp?.Intonation?.ErrorTypes ?? []).filter(
+        (t: string) => t && t !== "None"
+      );
+      const monoConf: number =
+        fp?.Intonation?.Monotone?.Confidence ??
+        fp?.Intonation?.Monotone?.WordPitchSlopeConfidence ??
+        0;
+      const breakLen100ns: number = fp?.Break?.BreakLength ?? 0;
+      const fb: ProsodyFeedback = {};
+      if (breakErrs.length) fb.breakErrorTypes = breakErrs;
+      if (breakLen100ns > 0)
+        fb.breakLengthMs = Math.round(breakLen100ns / 10000);
+      if (intErrs.length) fb.intonationErrorTypes = intErrs;
+      if (monoConf > 0.5) fb.monotone = true;
+      if (Object.keys(fb).length > 0) prosodyFeedback = fb;
+    }
+
     return {
       word: w?.Word ?? "",
       score: Math.round(acc),
       status,
       errorType: err,
       worstPhoneme,
+      worstSyllable,
       phonemes: phonemes.length ? phonemes : undefined,
+      syllables: syllables.length ? syllables : undefined,
+      prosodyFeedback,
     };
   });
 
+  // Coach's notes — synthesize human-readable coaching advice from the raw
+  // Azure signals. Ordered by importance so the top note is the most
+  // actionable.
+  const notes: string[] = [];
+  const overall = Math.round(pronScore);
+  const prosody = typeof prosodyScore === "number" ? Math.round(prosodyScore) : null;
+  const completeness = Math.round(completenessScore ?? 0);
+
+  const missed = words.filter((w) => w.status === "missing");
+  if (missed.length >= 2) {
+    notes.push(
+      `You skipped ${missed.length} words. Slow down and say every word clearly.`
+    );
+  } else if (missed.length === 1) {
+    notes.push(`You skipped "${missed[0].word}". Say every word in the phrase.`);
+  }
+
+  const poor = words.filter((w) => w.status === "poor");
+  if (poor.length >= 3) {
+    notes.push(
+      `Several sounds need work. Listen to the reference twice before you record.`
+    );
+  }
+
+  const monotoneWords = words.filter((w) => w.prosodyFeedback?.monotone).length;
+  if (monotoneWords >= 2 || (prosody !== null && prosody < 60)) {
+    notes.push(
+      "Your delivery sounded a bit flat. Let your pitch rise and fall across the sentence — it's how natives stress what matters."
+    );
+  }
+
+  const unexpectedBreaks = words.filter((w) =>
+    w.prosodyFeedback?.breakErrorTypes?.includes("UnexpectedBreak")
+  );
+  if (unexpectedBreaks.length >= 1) {
+    const first = unexpectedBreaks[0].word;
+    notes.push(
+      `You paused unexpectedly${first ? ` before "${first}"` : ""}. Try the phrase in one smooth flow.`
+    );
+  }
+
+  const missingBreaks = words.filter((w) =>
+    w.prosodyFeedback?.breakErrorTypes?.includes("MissingBreak")
+  );
+  if (missingBreaks.length >= 1) {
+    notes.push(
+      "You rushed through a natural pause. Native speakers take a tiny break between tone groups."
+    );
+  }
+
+  if (typeof fluencyScore === "number" && fluencyScore < 70 && poor.length < 2) {
+    notes.push(
+      "Your rhythm was off. Match the reference's pace — not too fast, not too slow."
+    );
+  }
+
+  if (overall >= 90 && notes.length === 0) {
+    notes.push("Excellent — that sounded like a native speaker. Keep going.");
+  } else if (overall >= 80 && notes.length === 0) {
+    notes.push("Solid attempt. Listen to the reference again and try to match the melody.");
+  }
+
   return NextResponse.json({
-    overall: Math.round(pronScore),
+    overall,
     accuracy: Math.round(accuracyScore),
     fluency: Math.round(fluencyScore ?? 0),
-    completeness: Math.round(completenessScore ?? 0),
-    prosody: typeof prosodyScore === "number" ? Math.round(prosodyScore) : undefined,
+    completeness,
+    prosody: prosody ?? undefined,
     words,
     transcript,
+    coachNotes: notes,
     mode: "azure",
   });
 }

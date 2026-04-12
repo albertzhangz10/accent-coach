@@ -231,6 +231,23 @@ export function ScoreDisplay({
         })}
       </View>
 
+      {score.coachNotes && score.coachNotes.length > 0 ? (
+        <View style={styles.coachBox}>
+          <View style={styles.coachHeader}>
+            <Ionicons name="sparkles" size={14} color="#c4b5fd" />
+            <Text style={styles.coachLabel}>COACH'S NOTES</Text>
+          </View>
+          <View style={{ gap: 8, marginTop: 10 }}>
+            {score.coachNotes.map((note, i) => (
+              <View key={i} style={styles.coachNoteRow}>
+                <Text style={styles.coachBullet}>•</Text>
+                <Text style={styles.coachNote}>{note}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.sentenceBox}>
         <Text style={styles.sectionLabel}>YOUR ATTEMPT</Text>
         <Text style={styles.sentenceHint}>
@@ -311,9 +328,30 @@ export function ScoreDisplay({
                           {plainSuffix}
                         </Text>
                       ) : null}
+                      {w.worstSyllable &&
+                      w.worstSyllable.grapheme &&
+                      w.worstSyllable.score < 85 &&
+                      (w.syllables?.length ?? 0) > 1 ? (
+                        <Text style={styles.focusPhoneme}>
+                          weakest syllable: &ldquo;{w.worstSyllable.grapheme}
+                          &rdquo; · {w.worstSyllable.score}/100
+                        </Text>
+                      ) : null}
                       {phonemeAlts ? (
                         <Text style={styles.focusSoundedLike}>
                           sounded like /{phonemeAlts.phoneme}/
+                        </Text>
+                      ) : null}
+                      {w.prosodyFeedback?.monotone ? (
+                        <Text style={styles.focusSoundedLike}>
+                          delivery was flat — vary your pitch
+                        </Text>
+                      ) : null}
+                      {w.prosodyFeedback?.breakErrorTypes?.includes(
+                        "UnexpectedBreak",
+                      ) ? (
+                        <Text style={styles.focusSoundedLike}>
+                          unexpected pause right before this word
                         </Text>
                       ) : null}
                     </View>
@@ -490,6 +528,42 @@ const styles = StyleSheet.create({
     color: "#d4d4d8",
     opacity: 0.55,
     textDecorationLine: "line-through",
+  },
+
+  coachBox: {
+    backgroundColor: "rgba(110,231,183,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(110,231,183,0.35)",
+    borderRadius: 16,
+    padding: 16,
+  },
+  coachHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  coachLabel: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: "#6ee7b7",
+    fontWeight: "800",
+  },
+  coachNoteRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  coachBullet: {
+    color: "#6ee7b7",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 20,
+  },
+  coachNote: {
+    color: "#e5e5ea",
+    fontSize: 13,
+    lineHeight: 20,
+    flex: 1,
   },
 
   focusBox: {
