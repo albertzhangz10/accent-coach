@@ -1,266 +1,284 @@
-# Accent Coach
+# Accent Coach · 口音教练
 
-An English pronunciation coaching app for iPhone. Pick a lesson, listen to a native reference voice, record yourself, and get **word-by-word** and **phoneme-level** feedback powered by Azure's Speech Pronunciation Assessment API.
+一款面向 iPhone 的英语发音训练应用。选择一节课，听原生外教录制的参考句，自己跟读，立即获得基于 Azure 语音发音评估服务的 **逐词** 与 **音素级** 反馈。
 
-Built with Next.js (backend) and Expo / React Native (mobile). Runs on your phone via Expo Go, no Apple Developer account required.
+后端使用 Next.js，移动端使用 Expo / React Native。通过 Expo Go 在真机运行，**无需 Apple 开发者账号**。
 
-*中文版: [README.zh.md](README.zh.md)*
-
----
-
-## Features
-
-- **~42 lessons** across 6 weeks, from foundation sounds to near-native polish (flap T, dark L, nasal T, TR/DR affrication, weak forms, prosody)
-- **Per-word scoring** with inline highlighting of the phrase you spoke
-- **Per-phoneme IPA feedback** — "your /θ/ sounded like /s/"
-- **"Focus on" coaching cards** with mechanical tips per weak sound and tappable examples
-- **Azure Neural TTS** reference voices (8 American + British, friendly-styled SSML)
-- **Prosody / intonation scoring**
-- **Progress tracking** — streaks, per-lesson best scores, day-by-day curriculum
-- **Full VoiceOver support**, Reduce Motion respected, WCAG-AA contrast
-- **Haptics** throughout; cancelable scoring; graceful mic-permission recovery
-- Dark theme, onboarding flow, voice picker in Settings
+*English version: [README.en.md](README.en.md)*
 
 ---
 
-## Tech stack
+## 功能特性
 
-**Backend** (`/`): Next.js 14, Node 18+, TypeScript
-- `app/api/score-audio` — receives WAV, forwards to Azure Speech Pronunciation Assessment REST, returns normalized scores (with IPA phonemes, top-5 alternatives, prosody)
-- `app/api/tts` — Azure Neural TTS with in-memory LRU cache + retry/backoff
-
-**Mobile** (`/mobile`): Expo SDK 54, React Native 0.81, expo-router, expo-audio, expo-haptics, AsyncStorage
-
-**External services**: Azure Cognitive Services — Speech (Pronunciation Assessment + Neural TTS)
-
----
-
-## Prerequisites
-
-Before you start, make sure you have:
-
-1. **Node.js 18 or newer** — [download](https://nodejs.org)
-2. **An iPhone** on the same Wi-Fi network as your Mac (or Android — also works, see notes below)
-3. **Expo Go** installed on your phone from the App Store: https://apps.apple.com/app/expo-go/id982107779
-4. **A free Azure account** — https://azure.microsoft.com/free (needed for the Speech service)
-5. **`git`** (comes with Xcode Command Line Tools on macOS)
-
-That's it. You don't need Xcode, don't need an Apple Developer account, don't need a paid Azure plan.
+- **约 42 节课程**，按 6 周学习路径由易到难，从基础音素一直到接近母语者水准（弹舌 T、软 L、鼻化 T、TR/DR 颤化、弱读、语调等）
+- **逐词评分**，在你读出的句子上就地高亮
+- **逐音素 IPA 反馈** ——「你的 /θ/ 听起来像 /s/」
+- **「重点练习」辅导卡片**，针对每个薄弱音素给出发音要领和可点击发音的示例词
+- **Azure 神经网络 TTS 参考声音**（8 种美式 + 英式，附带 friendly 风格的 SSML 表情）
+- **韵律 / 语调评分**
+- **进度追踪** —— 连续天数、每节课最高分、逐日课程进度
+- **完整 VoiceOver 支持**、尊重「降低动态效果」系统设置、符合 WCAG-AA 对比度
+- 全程触觉反馈、评分过程可取消、麦克风权限优雅恢复
+- 暗色主题、首次使用引导流程、设置中可选参考发音者
 
 ---
 
-## Get your Azure Speech keys (5 minutes, free)
+## 技术栈
 
-1. Sign in at https://portal.azure.com
-2. In the top search bar type **Speech services** and click **Create**
-3. Fill in:
-   - **Subscription**: your default (free trial is fine)
-   - **Resource group**: create a new one, e.g. `accent-coach-rg`
-   - **Region**: pick a region near you, e.g. `East US`
-   - **Name**: any globally-unique name, e.g. `accent-coach-yourname-1`
-   - **Pricing tier**: **Free F0** (5 audio hours/month free + 500k TTS characters/month free)
-4. Click **Review + create** → **Create**. Wait ~30 seconds for deployment.
-5. Open the resource → click **Keys and Endpoint** in the left sidebar
-6. Copy **KEY 1** and note the **Location/Region** (e.g. `eastus`)
+**后端**（根目录）：Next.js 14，Node 18+，TypeScript
+- `app/api/score-audio` —— 接收录音 WAV，做服务端静音裁剪，转发至 Azure Speech 发音评估 REST 接口，返回归一化的评分（包含 IPA 音素、Top-5 相似音素、韵律评分、逐音节评分、辅导建议）
+- `app/api/tts` —— Azure 神经网络 TTS 代理（带内存 LRU 缓存 + 失败重试）
 
-The free tier is generous enough for solo / personal use — you will not hit the limits.
+**移动端**（`/mobile`）：Expo SDK 54、React Native 0.81、expo-router、expo-audio、expo-haptics、AsyncStorage
+
+**外部服务**：Microsoft Azure 认知服务 —— Speech（发音评估 + 神经网络 TTS）
 
 ---
 
-## Setup
+## 前置条件
 
-### 1. Clone and install
+在开始前，请确保你已有：
+
+1. **Node.js 18 或更高版本** —— [下载地址](https://nodejs.org)
+2. **一台 iPhone**，与你的 Mac 连接在同一 Wi-Fi 网络（Android 亦可，见下文说明）
+3. **Expo Go**，从 App Store 安装：https://apps.apple.com/app/expo-go/id982107779
+4. **免费的 Azure 账号** —— https://azure.microsoft.com/free（用于 Speech 服务）
+5. **`git`**（在 macOS 上随 Xcode 命令行工具自带）
+
+就这些。不需要 Xcode，不需要 Apple 开发者账号，不需要付费的 Azure 订阅。
+
+---
+
+## 获取 Azure Speech 密钥（5 分钟，完全免费）
+
+1. 登录 https://portal.azure.com
+2. 顶部搜索栏输入 **Speech services**，点击 **Create**（创建）
+3. 填写表单：
+   - **Subscription**（订阅）：使用你的默认订阅，免费试用即可
+   - **Resource group**（资源组）：新建一个，比如 `accent-coach-rg`
+   - **Region**（区域）：选离你近的区域，比如 `East US`（美东）
+   - **Name**（名称）：任意全球唯一的名字，比如 `accent-coach-你的名字-1`
+   - **Pricing tier**（定价层）：务必选 **Free F0**（每月免费 5 小时音频 + 50 万 TTS 字符）
+4. 点击 **Review + create** → **Create**。等待约 30 秒部署完成。
+5. 打开该资源 → 左侧栏点击 **Keys and Endpoint**（密钥和终结点）
+6. 复制 **KEY 1**，记下 **Location/Region**（比如 `eastus`）
+
+免费额度对个人使用来说极其宽裕 —— 你完全不可能用完。
+
+---
+
+## 本地部署
+
+### 1. 克隆代码并安装依赖
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/accent-coach.git
+git clone https://github.com/你的用户名/accent-coach.git
 cd accent-coach
 
-# Install backend deps
+# 安装后端依赖
 npm install
 
-# Install mobile deps
+# 安装移动端依赖
 cd mobile
 npm install
 cd ..
 ```
 
-### 2. Configure Azure credentials
+### 2. 配置 Azure 凭据
 
-In the **project root** (not `mobile/`), create a file called `.env.local`:
+在**项目根目录**（不是 `mobile/`）新建一个文件 `.env.local`：
 
 ```bash
 cp .env.example .env.local
 ```
 
-Open `.env.local` and paste your Azure key and region:
+打开 `.env.local`，粘贴你的 Azure 密钥和区域：
 
 ```
-AZURE_SPEECH_KEY=paste-your-key-1-here
+AZURE_SPEECH_KEY=把你的 KEY 1 贴在这里
 AZURE_SPEECH_REGION=eastus
 ```
 
-⚠️ **Never commit this file.** It's already in `.gitignore`, but double-check if you fork this project.
+⚠️ **切勿把这个文件提交到 Git。** `.gitignore` 里已经排除了它，如果你 fork 本项目请再确认一遍。
 
-### 3. Start the backend
+### 3. 启动后端
 
-From the project root:
+在项目根目录：
 
 ```bash
 npm run dev
 ```
 
-This starts Next.js on **http://0.0.0.0:3001** (port 3000 is often taken). It binds to all network interfaces so your phone can reach it over Wi-Fi.
+后端会在 **http://0.0.0.0:3001** 启动（端口 3000 在 Mac 上经常被占用）。绑定到所有网络接口，这样你的手机才能通过 Wi-Fi 访问它。
 
-Leave this terminal running.
+这个终端窗口别关。
 
-### 4. Start the Expo mobile dev server
+### 4. 启动 Expo 移动端开发服务器
 
-Open a **second terminal**:
+再开一个终端：
 
 ```bash
 cd mobile
 npm start
 ```
 
-Metro will boot on port 8081. Leave this running too.
+Metro 会在 8081 端口启动。这个窗口也别关。
 
-### 5. Connect your iPhone
+### 5. 用 iPhone 连接
 
-1. Open **Expo Go** on your phone
-2. Make sure your phone is on the **same Wi-Fi network** as your Mac
-3. In Expo Go, tap **"Enter URL manually"** and type:
+1. 在手机上打开 **Expo Go**
+2. 确认手机和 Mac 在**同一 Wi-Fi 网络**下
+3. 在 Expo Go 里点 **"Enter URL manually"**（手动输入 URL），输入：
    ```
-   exp://YOUR_MAC_LAN_IP:8081
+   exp://你的 Mac 局域网 IP:8081
    ```
-   To find your Mac's LAN IP, run `ipconfig getifaddr en0` in a terminal.
-4. Tap **Connect**. The first bundle takes ~30 seconds to compile, then the app launches.
-5. Allow microphone permission when prompted.
+   在 Mac 终端运行 `ipconfig getifaddr en0` 可以查到局域网 IP。
+4. 点 **Connect**。首次打包约需 30 秒，之后应用就会启动。
+5. 出现麦克风权限提示时请允许。
 
-**Alternative**: open Safari on your iPhone and visit `http://YOUR_MAC_LAN_IP:8081` — it'll prompt to open in Expo Go.
+**另一种方式**：在 iPhone 上打开 Safari，访问 `http://你的 Mac 局域网 IP:8081`，会自动提示跳转到 Expo Go。
 
 ---
 
-## Using the app
+## 使用方法
 
-1. First launch runs a 3-step onboarding
-2. Home screen groups lessons by level — start with Week 1 Beginner lessons and work forward linearly
-3. In a lesson, tap **Listen** to hear the reference phrase, then **Record** and say it. Tap **Stop** when done.
-4. You'll see per-word scores, a highlighted sentence, and a "Focus on these words" box with phoneme tips and tappable examples
-5. Tap any colored word in the highlighted sentence to hear just that word spoken
-6. Adjust the voice in **Settings** (gear icon, top-right of home)
+1. 首次启动会显示 3 步的引导流程
+2. 主页按难度分组显示所有课程 —— 建议从第 1 周初级课程开始，按顺序线性推进
+3. 进入课程后，点 **Listen** 听参考发音，再点 **Record** 跟读，读完后点 **Stop**
+4. 你会看到逐词评分、带就地高亮的原句、"重点练习"卡片（含音素提示和可点击的示例词），以及全新的 **Coach's Notes（教练点评）** 卡片
+5. 点击高亮句子中的任意彩色词，可以单独听那个词的发音
+6. 如需更换参考发音者，点右上角齿轮进入 **Settings**
 
-Your progress is saved locally on-device only — no account, no cloud sync.
+你的学习进度仅保存在本机 —— 无账号、无云端同步。
 
 ---
 
-## Project structure
+## 项目结构
 
 ```
 accent-coach/
-├── app/                        # Next.js backend (App Router)
+├── app/                        # Next.js 后端 (App Router)
 │   ├── api/
-│   │   ├── score-audio/        # Azure Pronunciation Assessment proxy
-│   │   ├── tts/                # Azure Neural TTS proxy (+ cache)
-│   │   └── speech-token/       # Unused, legacy
-│   ├── lesson/[id]/            # Web version of lesson player (optional)
+│   │   ├── score-audio/        # Azure 发音评估代理 + 静音裁剪
+│   │   ├── tts/                # Azure 神经网络 TTS 代理 + LRU 缓存
+│   │   └── speech-token/       # 未使用，遗留接口
+│   ├── lesson/[id]/            # 课程播放页的网页版（可选）
 │   ├── layout.tsx
 │   └── page.tsx
-├── components/                 # Web-only components
+├── components/                 # 仅网页版使用的组件
 ├── lib/
-│   ├── lessons.ts              # Curriculum — 42 lessons, shared with mobile
-│   ├── scoring.ts              # Fallback Levenshtein scorer
+│   ├── lessons.ts              # 42 节课程大纲，与移动端共享
+│   ├── scoring.ts              # 备用 Levenshtein 评分器
 │   └── progress.ts
-├── mobile/                     # Expo React Native app
-│   ├── app/                    # expo-router screens
+├── mobile/                     # Expo React Native 应用
+│   ├── app/                    # expo-router 页面
 │   │   ├── _layout.tsx
-│   │   ├── index.tsx           # Home / lesson grid
-│   │   ├── lesson/[id].tsx     # Lesson player
+│   │   ├── index.tsx           # 主页 / 课程列表
+│   │   ├── lesson/[id].tsx     # 课程播放页
 │   │   ├── onboarding.tsx
 │   │   └── settings.tsx
 │   ├── components/
-│   │   ├── Recorder.tsx        # Mic, waveform, pulse animation
-│   │   └── ScoreDisplay.tsx    # Score, highlighted sentence, focus words
+│   │   ├── Recorder.tsx        # 录音、波形、脉冲动画、取消按钮
+│   │   └── ScoreDisplay.tsx    # 评分、高亮句子、重点词、教练点评
 │   └── lib/
-│       ├── lessons.ts          # Identical to root lib/lessons.ts
-│       ├── api.ts              # AttemptScore types + scoreAudio uploader
-│       ├── tts.ts              # speakNative() using expo-audio
-│       ├── audioConfig.ts      # 16kHz PCM WAV recording options
-│       ├── phonemeTips.ts      # ARPAbet → plain-English pronunciation tips
-│       ├── settings.ts         # Voice + onboarding flags (AsyncStorage)
-│       └── progress.ts         # Streak / best-score tracking
-├── .env.example                # Template — DO NOT put real keys here
-├── .env.local                  # Your real keys, gitignored
+│       ├── lessons.ts          # 与根目录 lib/lessons.ts 内容一致
+│       ├── api.ts              # AttemptScore 类型 + scoreAudio 上传器
+│       ├── tts.ts              # 使用 expo-audio 的 speakNative()
+│       ├── audioConfig.ts      # 16kHz PCM WAV 录音参数
+│       ├── phonemeTips.ts      # ARPAbet → 中文/英文发音要领字典
+│       ├── settings.ts         # 发音者选择与引导标记 (AsyncStorage)
+│       └── progress.ts         # 连续天数 / 最高分追踪
+├── .env.example                # 模板文件 —— 切勿填入真实密钥
+├── .env.local                  # 你的真实密钥，已在 .gitignore 中
 └── README.md
 ```
 
 ---
 
-## Architecture
+## 架构
 
 ```
-┌──────────────────┐    POST WAV     ┌──────────────────┐    REST     ┌──────────┐
-│ Expo app (phone) │ ──────────────► │ Next.js backend  │ ──────────► │  Azure   │
-│  (Expo Go)       │                 │   localhost:3001 │             │  Speech  │
-│                  │ ◄────────────── │                  │ ◄────────── │  Service │
-└──────────────────┘  score JSON     └──────────────────┘  JSON/MP3   └──────────┘
+┌──────────────────┐    上传 WAV     ┌──────────────────┐    REST     ┌──────────┐
+│ Expo 应用 (手机) │ ──────────────► │ Next.js 后端     │ ──────────► │  Azure   │
+│   (Expo Go)      │                 │  localhost:3001  │             │  Speech  │
+│                  │ ◄────────────── │                  │ ◄────────── │   服务   │
+└──────────────────┘   评分 JSON     └──────────────────┘  JSON/MP3   └──────────┘
         ▲                                    │
         │ GET /api/tts?text=...              │
         └────────────────────────────────────┘
-                     MP3 audio
+                     MP3 音频
 ```
 
-The mobile app records 16kHz mono PCM WAV via `expo-audio`, uploads it to the backend, which adds the `Pronunciation-Assessment` header (with IPA alphabet, NBest=5, prosody enabled), forwards to Azure, normalizes the response, and returns it. For TTS, the backend wraps text in SSML with a friendly style, requests 24kHz/96kbps MP3, and caches responses in an in-memory LRU (200 entries).
+移动端通过 `expo-audio` 以 16kHz 单声道 16-bit PCM WAV 格式录音，上传至后端。后端对 WAV 进行服务端静音裁剪（剔除首尾的静音帧以避免 iOS 音频会话切换造成的前导静音影响评分），添加 `Pronunciation-Assessment` 头部（启用 IPA 音标、Top-5 音素、韵律评分），转发至 Azure，规范化响应并返回。
+
+TTS 方面，后端把待朗读文本包装成带 friendly 风格的 SSML，请求 24kHz/96kbps 的 MP3，并在内存中使用 LRU（200 条上限）缓存响应，以降低重复 "Listen" 操作的延迟与成本。
 
 ---
 
-## Troubleshooting
+## 故障排查
 
-**"Cannot connect" when opening `exp://...` in Expo Go**
-- Phone and Mac must be on the same Wi-Fi network (not one on a guest SSID)
-- macOS firewall: System Settings → Network → Firewall → either off, or allow Node
-- Check `ipconfig getifaddr en0` returns an IP on the same subnet as your phone
+**在 Expo Go 里输入 `exp://...` 显示"无法连接"**
+- 手机和 Mac 必须在同一 Wi-Fi 网络下（不能一个在访客网络，另一个在主网络）
+- macOS 防火墙：系统设置 → 网络 → 防火墙 → 关闭，或允许 Node 入站
+- 运行 `ipconfig getifaddr en0`，确认 Mac 局域网 IP 与手机在同一网段
 
-**Scores come back as 0 with transcript populated**
-- Means Azure recognized the audio but didn't run pronunciation assessment
-- Check the Next.js terminal for `[score-audio]` logs — they print the Azure raw response
-- Almost always a WAV format or sample rate issue
+**评分回来是 0，但能看到识别出来的文字**
+- 说明 Azure 识别出了文字但没跑发音评估
+- 查看 Next.js 终端里的 `[score-audio]` 日志，里面会打印 Azure 的原始响应
+- 几乎总是 WAV 格式或采样率不对引起的
 
-**"Azure not configured" error**
-- You haven't created `.env.local` or the vars are wrong
-- Restart `npm run dev` after editing `.env.local` — Next.js only reads env on startup
-- Make sure there are no quotes around the key: `AZURE_SPEECH_KEY=abc123`, not `AZURE_SPEECH_KEY="abc123"`
+**报错 "Azure not configured"**
+- 你还没建 `.env.local`，或者变量名写错了
+- 修改 `.env.local` 后要重启 `npm run dev` —— Next.js 只在启动时读环境变量
+- 密钥不要加引号：写 `AZURE_SPEECH_KEY=abc123`，不要写 `AZURE_SPEECH_KEY="abc123"`
 
-**Microphone permission denied on iPhone**
-- iPhone Settings → Privacy & Security → Microphone → Expo Go → turn on
-- If you denied once, the in-app "Open Settings" button takes you there
+**iPhone 提示麦克风权限被拒**
+- iPhone 设置 → 隐私与安全性 → 麦克风 → Expo Go → 打开
+- 如果你之前选了拒绝，应用内的 "Open Settings" 按钮会直接带你去设置页
 
-**Volume too low / audio comes from earpiece**
-- iOS routes audio through the earpiece after recording. The app resets the audio session before each playback, but if you still hit this, flip the physical ringer switch on your iPhone to ON (no orange stripe) and press volume-up while audio is playing.
+**声音太小 / 只从听筒出不是扬声器**
+- iOS 在录音后会把音频路由切到听筒。应用在每次播放前都会重置音频会话，但如果还是有问题，把 iPhone 侧边的静音开关拨到开（不显示橙色），播放时按音量加键调大系统音量。
 
-**TTS returns 401 Unauthorized**
-- Your Azure key is wrong, expired, or from a different region than `AZURE_SPEECH_REGION`
-- Go to Azure portal → Speech resource → Keys and Endpoint → regenerate Key 1 and re-paste
+**TTS 返回 401 Unauthorized**
+- 你的 Azure 密钥不对、已过期，或者 `AZURE_SPEECH_REGION` 填的区域和密钥不匹配
+- 去 Azure 门户 → Speech 资源 → Keys and Endpoint → 重新生成 Key 1 并替换 `.env.local`
 
----
-
-## Cost
-
-For solo personal use, this runs at **$0/month**. Azure's free tier F0 includes:
-- **5 audio hours/month** of Pronunciation Assessment (roughly 3,600 attempts)
-- **500,000 characters/month** of Neural TTS
-
-You'd need heavy daily practice to exceed either limit. The mobile app caches TTS responses in the backend so repeated "Listen" taps on the same phrase cost zero Azure calls.
-
-If you hit the limits, upgrading to the Standard S0 tier is pay-as-you-go at about **$1/audio hour** for Pronunciation Assessment and **$16/1M characters** for Neural TTS.
+**录音质量不佳 / 评分起伏大**
+- 在安静环境录音，手机距离嘴 15–20 厘米
+- 点 Record 后先停顿 0.3 秒再说话 —— 应用内部已有 400ms 的音频会话稳定延迟，但极快的跟读仍可能错过前导音
+- 如果某次录音效果明显差，用新的 **Cancel（取消）** 按钮丢弃，直接重录，不消耗 Azure 额度
 
 ---
 
-## License
+## 费用
 
-MIT. Do whatever you want with the code. The lesson content was written specifically for this project and you're free to adapt it.
+个人使用场景下，完全 **$0/月**。Azure 免费 F0 层包括：
+- 每月 **5 小时音频** 的发音评估（约 3,600 次尝试）
+- 每月 **50 万字符** 的神经网络 TTS
+
+想达到这个上限得每天极高强度练习。而且后端的 TTS LRU 缓存让你反复点 Listen 时只会命中缓存，不再消耗 Azure 配额。
+
+如果真的超了，升级到 Standard S0 按量付费大约是每小时 **$1** 的发音评估 + 每百万字符 **$16** 的 TTS。
 
 ---
 
-## Acknowledgements
+## 查看 Azure 使用量
 
-Inspired by commercial accent-coaching apps. The pronunciation feedback loop is powered by Microsoft Azure Cognitive Services. Icons by Ionicons (bundled with Expo).
+Azure 门户 → 你的 Speech 资源 → 左侧栏 **Metrics**（指标）。常用指标：
+- **Total Transactions** —— 所有 API 调用（TTS + 发音评估）
+- **Audio Seconds Processed** —— 发音评估专用
+- **Synthesized Characters** —— TTS 专用
+
+时间范围选最近 24 小时或 7 天，聚合方式选 **Sum**（求和）。
+
+---
+
+## 开源许可
+
+MIT。代码你想怎么用就怎么用。课程内容是专门为本项目编写的原创材料，可随意改编。
+
+---
+
+## 致谢
+
+灵感来源于市面上的口音训练商业应用。发音反馈由 Microsoft Azure 认知服务驱动。图标来自 Ionicons（Expo 自带）。
