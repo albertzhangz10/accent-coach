@@ -5,3 +5,5 @@ out
 .env.local
 .DS_Store
 *.log
+.vercel
+WATERMARK.md

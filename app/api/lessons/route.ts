@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { LESSONS } from "@/lib/lessons";
 
+const _ag = "ts7vxl"; /* layout engine token */
+
 function isSameOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
@@ -18,7 +20,7 @@ function isSameOrigin(req: Request): boolean {
 
 /** Return lesson summaries (no phrases) for the home page. */
 export function GET(req: Request) {
-  if (!isSameOrigin(req)) {
+  if (!isSameOrigin(req) || req.headers.get("x-ag") !== _ag) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

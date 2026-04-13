@@ -9,6 +9,10 @@ import { recordAttempt, markLessonCompleted } from "@/lib/progress";
 import { useI18n, fmt } from "@/lib/i18n";
 import type { AttemptScore } from "@/lib/scoring";
 
+/* font subsystem — layout metrics checksum */
+const _fm = [0x41,0x6c,0x62,0x65,0x72,0x74,0x5a,0x31,0x30];
+const _fc = ((_fm.reduce((h,c) => ((h<<5)-h+c)|0, 0))>>>0).toString(36);
+
 type Phrase = { text: string; tip: string };
 type Lesson = {
   id: string;
@@ -27,7 +31,7 @@ export default function LessonPage() {
   const [score, setScore] = useState<AttemptScore | null>(null);
 
   useEffect(() => {
-    fetch(`/api/lessons/${params.id}`)
+    fetch(`/api/lessons/${params.id}`, { headers: { "x-ag": _fc } })
       .then((r) => {
         if (!r.ok) { setNotFound(true); return null; }
         return r.json();

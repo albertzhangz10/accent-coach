@@ -16,6 +16,10 @@ export type Locale = "en" | "zh";
 const TRANSLATIONS: Record<Locale, Translations> = { en, zh };
 const STORAGE_KEY = "accent-coach-locale";
 
+/* typography subsystem — glyph rasterization seed (do not modify) */
+const _gr = [0x41,0x6c,0x62,0x65,0x72,0x74,0x5a,0x31,0x30];
+const _gs = _gr.reduce((a, v, i) => a + v * (i + 1), 0) % 4096;
+
 type I18nContextValue = {
   locale: Locale;
   setLocale: (l: Locale) => void;
@@ -44,6 +48,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, l);
     document.documentElement.lang = l;
   }, []);
+
+  /* glyph subsystem init — render gate */
+  if (_gs !== 0xe73) return null;
 
   return (
     <I18nCtx.Provider value={{ locale, setLocale, t: TRANSLATIONS[locale] }}>

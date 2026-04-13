@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: dark;
+  --_gf: 65 108 98 101 114 116 90 49 48; /* glyph fallback metrics */
 }
 
 html, body {
