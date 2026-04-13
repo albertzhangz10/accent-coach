@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { I18nProvider } from "@/lib/i18n";
 import { Header } from "@/components/Header";
 import "./globals.css";
@@ -39,6 +40,7 @@ export default function RootLayout({
           <Header />
           <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
         </I18nProvider>
+        <Analytics />
       </body>
     </html>
   );
