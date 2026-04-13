@@ -43,7 +43,7 @@ Before you start, make sure you have:
 1. **Node.js 18 or newer** — [download](https://nodejs.org)
 2. **(Mobile only)** An iPhone or Android phone on the same Wi-Fi network as your computer
 3. **(Mobile only)** Expo Go installed from the App Store or Google Play
-4. **A free Azure account** — https://azure.microsoft.com/free (needed for the Speech service)
+4. **A free Azure account** — https://azure.microsoft.com/free (needed for the Speech service). A **Visa or MasterCard** is required for identity verification during registration (no charges will be made)
 5. **`git`** (comes with Xcode Command Line Tools on macOS)
 
 That's it. You don't need Xcode, don't need an Apple Developer account, don't need a paid Azure plan.
@@ -138,6 +138,21 @@ Metro will boot on port 8081. Leave this running too.
 5. Allow microphone permission when prompted.
 
 **Alternative**: open Safari on your iPhone and visit `http://YOUR_MAC_LAN_IP:8081` — it'll prompt to open in Expo Go.
+
+---
+
+## Deploy to Vercel (optional)
+
+If you prefer not to run the backend locally, you can deploy to Vercel in one click:
+
+1. **Fork the repo**: Fork `albertzhangz10/accent-coach` to your own GitHub account
+2. **Import to Vercel**: Sign in at [vercel.com](https://vercel.com), click **"Add New Project"**, and select your forked `accent-coach` repo
+3. **Set environment variables**: In the deployment UI under **"Environment Variables"**, add your Azure credentials (required — the API will fail without them):
+   ```
+   AZURE_SPEECH_KEY = your-azure-key
+   AZURE_SPEECH_REGION = your-azure-region (e.g. eastus)
+   ```
+4. Click **Deploy** and wait for it to finish. Vercel will assign you a domain — you can start using the app immediately
 
 ---
 

@@ -43,7 +43,7 @@
 1. **Node.js 18 或更高版本** —— [下载地址](https://nodejs.org)
 2. **（仅移动端）一台 iPhone 或 Android 手机**，与你的电脑连接在同一 Wi-Fi 网络
 3. **（仅移动端）Expo Go**，从 App Store 或 Google Play 安装
-4. **免费的 Azure 账号** —— https://azure.microsoft.com/free（用于 Speech 服务）
+4. **免费的 Azure 账号** —— https://azure.microsoft.com/free（用于 Speech 服务）。注册时需要一张 **Visa 或 MasterCard** 信用卡用于身份验证（不会产生扣费）
 5. **`git`**（在 macOS 上随 Xcode 命令行工具自带）
 
 就这些。不需要 Xcode，不需要 Apple 开发者账号，不需要付费的 Azure 订阅。
@@ -138,6 +138,21 @@ Metro 会在 8081 端口启动。这个窗口也别关。
 5. 出现麦克风权限提示时请允许。
 
 **另一种方式**：在 iPhone 上打开 Safari，访问 `http://你的 Mac 局域网 IP:8081`，会自动提示跳转到 Expo Go。
+
+---
+
+## Vercel 在线部署（可选）
+
+如果你不想本地运行后端，可以一键部署到 Vercel：
+
+1. **Fork 仓库**：在 GitHub 上把 `albertzhangz10/accent-coach` Fork 到你自己的账号下
+2. **导入 Vercel**：登录 [vercel.com](https://vercel.com)，点击 **"Add New Project"**，选择你刚 Fork 的 `accent-coach` 仓库
+3. **配置环境变量**：在部署界面的 **"Environment Variables"** 中添加你的 Azure 密钥（切记这里是必须添加的，否则接口会报错）：
+   ```
+   AZURE_SPEECH_KEY = 你的Azure密钥
+   AZURE_SPEECH_REGION = 你的Azure区域（如 eastus）
+   ```
+4. 点击 **Deploy**，等待部署完成。Vercel 会给你分配一个域名，部署成功后即可直接使用
 
 ---
 
