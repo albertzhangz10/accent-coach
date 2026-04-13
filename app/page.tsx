@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LESSONS } from "@/lib/lessons";
 import {
   loadProgress,
   lessonBest,
@@ -10,6 +9,14 @@ import {
   type Progress,
 } from "@/lib/progress";
 import { useI18n, fmt } from "@/lib/i18n";
+
+type LessonSummary = {
+  id: string;
+  title: string;
+  focus: string;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  phraseCount: number;
+};
 
 const LEVEL_COLORS: Record<string, string> = {
   Beginner: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
@@ -34,20 +41,25 @@ const LEVEL_KEY: Record<string, "beginner" | "intermediate" | "advanced"> = {
 export default function Home() {
   const { t } = useI18n();
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [lessons, setLessons] = useState<LessonSummary[]>([]);
 
   useEffect(() => {
     setProgress(loadProgress());
+    fetch("/api/lessons")
+      .then((r) => r.json())
+      .then(setLessons)
+      .catch(() => {});
   }, []);
 
   const isNew =
     !progress || (progress.totalPhrasesSpoken === 0 && progress.streak === 0);
 
   const grouped = LEVELS.map((level) => {
-    const lessons = LESSONS.filter((l) => l.level === level);
+    const filtered = lessons.filter((l) => l.level === level);
     const done = progress
-      ? lessons.filter((l) => isLessonCompleted(progress, l.id)).length
+      ? filtered.filter((l) => isLessonCompleted(progress, l.id)).length
       : 0;
-    return { level, lessons, done };
+    return { level, lessons: filtered, done };
   });
 
   return (
@@ -82,7 +94,7 @@ export default function Home() {
       )}
 
       {/* Lessons grouped by level */}
-      {grouped.map(({ level, lessons, done }) => (
+      {grouped.map(({ level, lessons: group, done }) => (
         <section key={level}>
           <div className="flex items-center gap-2 mb-4">
             <span
@@ -92,11 +104,11 @@ export default function Home() {
               {t[LEVEL_KEY[level]]}
             </h2>
             <span className="text-xs text-zinc-600 ml-auto">
-              {fmt(t.doneCount, { done, total: lessons.length })}
+              {fmt(t.doneCount, { done, total: group.length })}
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lessons.map((lesson) => {
+            {group.map((lesson) => {
               const best = progress ? lessonBest(progress, lesson.id) : null;
               const completed = progress
                 ? isLessonCompleted(progress, lesson.id)
@@ -131,7 +143,7 @@ export default function Home() {
                   </h3>
                   <p className="text-sm text-zinc-400">{lesson.focus}</p>
                   <div className="mt-4 text-xs text-zinc-500">
-                    {fmt(t.phrasesCount, { n: lesson.phrases.length })}
+                    {fmt(t.phrasesCount, { n: lesson.phraseCount })}
                   </div>
                 </Link>
               );

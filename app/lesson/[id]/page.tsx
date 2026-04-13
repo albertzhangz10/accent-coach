@@ -2,20 +2,39 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState, useCallback } from "react";
-import { getLesson } from "@/lib/lessons";
+import { useState, useCallback, useEffect } from "react";
 import { Recorder } from "@/components/Recorder";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
 import { recordAttempt, markLessonCompleted } from "@/lib/progress";
 import { useI18n, fmt } from "@/lib/i18n";
 import type { AttemptScore } from "@/lib/scoring";
 
+type Phrase = { text: string; tip: string };
+type Lesson = {
+  id: string;
+  title: string;
+  focus: string;
+  level: string;
+  phrases: Phrase[];
+};
+
 export default function LessonPage() {
   const { t } = useI18n();
   const params = useParams<{ id: string }>();
-  const lesson = useMemo(() => getLesson(params.id), [params.id]);
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [score, setScore] = useState<AttemptScore | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/lessons/${params.id}`)
+      .then((r) => {
+        if (!r.ok) { setNotFound(true); return null; }
+        return r.json();
+      })
+      .then((data) => { if (data) setLesson(data); })
+      .catch(() => setNotFound(true));
+  }, [params.id]);
 
   const handleScored = useCallback(
     (s: AttemptScore) => {
@@ -38,13 +57,24 @@ export default function LessonPage() {
     if (lesson) markLessonCompleted(lesson.id);
   }, [lesson]);
 
-  if (!lesson) {
+  if (notFound) {
     return (
       <div className="text-center py-20 text-zinc-400">
         {t.lessonNotFound}{" "}
         <Link href="/" className="text-accent2 underline">
           {t.goBack}
         </Link>
+      </div>
+    );
+  }
+
+  if (!lesson) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <svg className="animate-spin h-6 w-6 text-zinc-500" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+          <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+        </svg>
       </div>
     );
   }
