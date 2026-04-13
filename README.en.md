@@ -19,7 +19,8 @@ Built with Next.js (backend) and Expo / React Native (mobile). Runs on your phon
 - **Progress tracking** — streaks, per-lesson best scores, day-by-day curriculum
 - **Full VoiceOver support**, Reduce Motion respected, WCAG-AA contrast
 - **Haptics** throughout; cancelable scoring; graceful mic-permission recovery
-- Dark theme, onboarding flow, voice picker in Settings
+- **Bilingual UI** (English / 中文) — switch in settings, preference saved automatically
+- Dark theme, onboarding flow, language and voice picker in Settings
 
 ---
 
@@ -147,7 +148,7 @@ Metro will boot on port 8081. Leave this running too.
 3. In a lesson, tap **Listen** to hear the reference phrase, then **Record** and say it. Tap **Stop** when done.
 4. You'll see per-word scores, a highlighted sentence, and a "Focus on these words" box with phoneme tips and tappable examples
 5. Tap any colored word in the highlighted sentence to hear just that word spoken
-6. Adjust the voice in **Settings** (gear icon, top-right of home)
+6. Tap the gear icon (top-right) to switch **interface language** (English / 中文) and **reference voice**
 
 Your progress is saved locally on-device only — no account, no cloud sync.
 
@@ -166,7 +167,15 @@ accent-coach/
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/                 # Web-only components
+│   ├── Header.tsx              # Top nav bar (brand + settings entry)
+│   ├── SettingsPanel.tsx       # Settings dropdown (language + voice picker)
+│   ├── Recorder.tsx            # Record, listen, score buttons
+│   └── ScoreDisplay.tsx        # Score ring, metrics, focus words, coach notes
 ├── lib/
+│   ├── i18n.tsx                # i18n context (React Context + localStorage)
+│   ├── translations/           # Translation files
+│   │   ├── en.ts               # English UI strings
+│   │   └── zh.ts               # Chinese UI strings
 │   ├── lessons.ts              # Curriculum — 42 lessons, shared with mobile
 │   ├── scoring.ts              # Fallback Levenshtein scorer
 │   └── progress.ts
