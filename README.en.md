@@ -1,8 +1,8 @@
 # Accent Coach
 
-An English pronunciation coaching app for iPhone. Pick a lesson, listen to a native reference voice, record yourself, and get **word-by-word** and **phoneme-level** feedback powered by Azure's Speech Pronunciation Assessment API.
+An English pronunciation coaching app that runs as a **web PWA** and on **iOS / Android**. Pick a lesson, listen to a neural reference voice, record yourself, and get **word-by-word** and **phoneme-level** feedback powered by Azure's Speech Pronunciation Assessment API.
 
-Built with Next.js (backend) and Expo / React Native (mobile). Runs on your phone via Expo Go, no Apple Developer account required.
+The web version works in any modern browser and can be added to your home screen as a PWA. The mobile version runs via Expo Go — no Apple Developer account required.
 
 *中文版: [README.md](README.md)*
 
@@ -41,8 +41,8 @@ Built with Next.js (backend) and Expo / React Native (mobile). Runs on your phon
 Before you start, make sure you have:
 
 1. **Node.js 18 or newer** — [download](https://nodejs.org)
-2. **An iPhone** on the same Wi-Fi network as your Mac (or Android — also works, see notes below)
-3. **Expo Go** installed on your phone from the App Store: https://apps.apple.com/app/expo-go/id982107779
+2. **(Mobile only)** An iPhone or Android phone on the same Wi-Fi network as your computer
+3. **(Mobile only)** Expo Go installed from the App Store or Google Play
 4. **A free Azure account** — https://azure.microsoft.com/free (needed for the Speech service)
 5. **`git`** (comes with Xcode Command Line Tools on macOS)
 

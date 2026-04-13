@@ -1,8 +1,8 @@
 # Accent Coach · 口音教练
 
-一款面向 iPhone 的英语发音训练应用。选择一节课，听原生外教录制的参考句，自己跟读，立即获得基于 Azure 语音发音评估服务的 **逐词** 与 **音素级** 反馈。
+一款英语发音训练应用，支持 **网页版（PWA）** 和 **iOS / Android 移动端**。选择一节课，听神经网络语音合成的参考句，自己跟读，立即获得基于 Azure 语音发音评估服务的 **逐词** 与 **音素级** 反馈。
 
-后端使用 Next.js，移动端使用 Expo / React Native。通过 Expo Go 在真机运行，**无需 Apple 开发者账号**。
+网页版可直接在浏览器中使用，也可添加到主屏幕作为 PWA 运行；移动端通过 Expo Go 在真机运行，**无需 Apple 开发者账号**。
 
 *English version: [README.en.md](README.en.md)*
 
@@ -41,8 +41,8 @@
 在开始前，请确保你已有：
 
 1. **Node.js 18 或更高版本** —— [下载地址](https://nodejs.org)
-2. **一台 iPhone**，与你的 Mac 连接在同一 Wi-Fi 网络（Android 亦可，见下文说明）
-3. **Expo Go**，从 App Store 安装：https://apps.apple.com/app/expo-go/id982107779
+2. **（仅移动端）一台 iPhone 或 Android 手机**，与你的电脑连接在同一 Wi-Fi 网络
+3. **（仅移动端）Expo Go**，从 App Store 或 Google Play 安装
 4. **免费的 Azure 账号** —— https://azure.microsoft.com/free（用于 Speech 服务）
 5. **`git`**（在 macOS 上随 Xcode 命令行工具自带）
 
