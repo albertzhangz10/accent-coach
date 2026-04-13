@@ -9,6 +9,7 @@ import {
   isLessonCompleted,
   type Progress,
 } from "@/lib/progress";
+import { useI18n, fmt } from "@/lib/i18n";
 
 const LEVEL_COLORS: Record<string, string> = {
   Beginner: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
@@ -24,7 +25,14 @@ const LEVEL_DOT: Record<string, string> = {
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"] as const;
 
+const LEVEL_KEY: Record<string, "beginner" | "intermediate" | "advanced"> = {
+  Beginner: "beginner",
+  Intermediate: "intermediate",
+  Advanced: "advanced",
+};
+
 export default function Home() {
+  const { t } = useI18n();
   const [progress, setProgress] = useState<Progress | null>(null);
 
   useEffect(() => {
@@ -47,35 +55,29 @@ export default function Home() {
       {/* Hero */}
       <section>
         <h1 className="text-4xl font-bold tracking-tight mb-3">
-          Sound more natural in English.
+          {t.heroTitle}
         </h1>
-        <p className="text-zinc-400 max-w-2xl">
-          Pick a lesson, listen to the reference, and record yourself. Get
-          instant word-by-word feedback on your pronunciation.
-        </p>
+        <p className="text-zinc-400 max-w-2xl">{t.heroSubtitle}</p>
       </section>
 
       {/* Stats or New-user card */}
       {progress && !isNew ? (
         <section className="grid grid-cols-3 gap-4 max-w-xl">
           <Stat
-            label="Day streak"
+            label={t.statStreak}
             value={progress.streak}
-            suffix={progress.streak === 1 ? "day" : "days"}
+            suffix={progress.streak === 1 ? t.day : t.days}
           />
-          <Stat label="Phrases" value={progress.totalPhrasesSpoken} />
+          <Stat label={t.statPhrases} value={progress.totalPhrasesSpoken} />
           <Stat
-            label="Lessons done"
+            label={t.statLessons}
             value={progress.completedLessons.length}
           />
         </section>
       ) : (
         <section className="card p-6 max-w-xl border-accent2/30">
-          <h2 className="text-lg font-semibold mb-1">Welcome!</h2>
-          <p className="text-sm text-zinc-400">
-            Start with a Beginner lesson below. You will listen to a phrase,
-            record yourself, and get instant feedback on every word.
-          </p>
+          <h2 className="text-lg font-semibold mb-1">{t.welcomeTitle}</h2>
+          <p className="text-sm text-zinc-400">{t.welcomeBody}</p>
         </section>
       )}
 
@@ -87,10 +89,10 @@ export default function Home() {
               className={`inline-block w-2 h-2 rounded-full ${LEVEL_DOT[level]}`}
             />
             <h2 className="text-xs uppercase tracking-wider text-zinc-500">
-              {level}
+              {t[LEVEL_KEY[level]]}
             </h2>
             <span className="text-xs text-zinc-600 ml-auto">
-              {done} / {lessons.length} done
+              {fmt(t.doneCount, { done, total: lessons.length })}
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,17 +111,17 @@ export default function Home() {
                     <span
                       className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${LEVEL_COLORS[lesson.level]}`}
                     >
-                      {lesson.level}
+                      {t[LEVEL_KEY[lesson.level]]}
                     </span>
                     <div className="flex items-center gap-2">
                       {best !== null && (
                         <span className="text-xs text-emerald-300 font-semibold">
-                          Best {best}
+                          {fmt(t.best, { score: best })}
                         </span>
                       )}
                       {completed && (
                         <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                          Done
+                          {t.done}
                         </span>
                       )}
                     </div>
@@ -129,7 +131,7 @@ export default function Home() {
                   </h3>
                   <p className="text-sm text-zinc-400">{lesson.focus}</p>
                   <div className="mt-4 text-xs text-zinc-500">
-                    {lesson.phrases.length} phrases
+                    {fmt(t.phrasesCount, { n: lesson.phrases.length })}
                   </div>
                 </Link>
               );

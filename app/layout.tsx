@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { VoicePickerClient } from "@/components/VoicePicker";
+import { I18nProvider } from "@/lib/i18n";
+import { Header } from "@/components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,21 +35,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="font-sans min-h-screen">
-        <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-10 bg-bg/70 pt-[env(safe-area-inset-top)]">
-          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 font-bold text-lg">
-              <span className="inline-block w-6 h-6 rounded-full bg-gradient-to-br from-accent to-accent2" />
-              Accent Coach
-            </a>
-            <nav className="flex items-center gap-4 text-sm text-zinc-400">
-              <a href="/" className="hover:text-zinc-200">
-                Practice
-              </a>
-              <VoicePickerClient />
-            </nav>
-          </div>
-        </header>
-        <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
+        <I18nProvider>
+          <Header />
+          <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
+        </I18nProvider>
       </body>
     </html>
   );

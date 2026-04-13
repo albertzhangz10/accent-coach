@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WavRecorder } from "@/lib/webRecorder";
 import { speakNative, stopSpeaking } from "@/lib/webTts";
+import { useI18n } from "@/lib/i18n";
 import type { AttemptScore } from "@/lib/scoring";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 type State = "idle" | "listening" | "recording" | "processing" | "error";
 
 export function Recorder({ reference, onScored }: Props) {
+  const { t } = useI18n();
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
   const [durationMs, setDurationMs] = useState(0);
@@ -53,11 +55,11 @@ export function Recorder({ reference, onScored }: Props) {
         setDurationMs(rec.getDurationMs());
       }, 100);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Microphone access denied";
-      setError(msg + " — check your browser permissions.");
+      const msg = e instanceof Error ? e.message : "";
+      setError(msg ? `${msg} — ${t.errMicDenied}` : t.errMicDenied);
       setState("error");
     }
-  }, []);
+  }, [t]);
 
   const handleCancel = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -78,7 +80,7 @@ export function Recorder({ reference, onScored }: Props) {
     if (duration < 800) {
       rec.cancel();
       recorderRef.current = null;
-      setError("Recording too short — hold for at least 1 second.");
+      setError(t.errTooShort);
       setState("error");
       return;
     }
@@ -87,7 +89,7 @@ export function Recorder({ reference, onScored }: Props) {
     if (peak < 0.0056) {
       rec.cancel();
       recorderRef.current = null;
-      setError("We didn't hear anything — check your microphone.");
+      setError(t.errSilent);
       setState("error");
       return;
     }
@@ -129,7 +131,7 @@ export function Recorder({ reference, onScored }: Props) {
     } finally {
       abortRef.current = null;
     }
-  }, [reference, onScored]);
+  }, [reference, onScored, t]);
 
   const handleCancelProcessing = useCallback(() => {
     abortRef.current?.abort();
@@ -152,7 +154,7 @@ export function Recorder({ reference, onScored }: Props) {
             onClick={handleCancel}
             className="btn px-5 py-2.5 bg-panel border border-border text-zinc-400 hover:text-zinc-200 hover:border-zinc-500"
           >
-            Cancel
+            {t.cancel}
           </button>
         ) : (
           <button
@@ -193,7 +195,7 @@ export function Recorder({ reference, onScored }: Props) {
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
               </svg>
             )}
-            Listen
+            {t.listen}
           </button>
         )}
 
@@ -212,7 +214,7 @@ export function Recorder({ reference, onScored }: Props) {
             >
               <rect x="6" y="6" width="12" height="12" rx="2" />
             </svg>
-            Stop
+            {t.stop}
           </button>
         ) : state === "processing" ? (
           <button
@@ -240,7 +242,7 @@ export function Recorder({ reference, onScored }: Props) {
                 className="opacity-75"
               />
             </svg>
-            Scoring...
+            {t.scoring}
           </button>
         ) : (
           <button
@@ -257,7 +259,7 @@ export function Recorder({ reference, onScored }: Props) {
             >
               <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.993 6.993 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z" />
             </svg>
-            Record
+            {t.record}
           </button>
         )}
       </div>
@@ -281,7 +283,7 @@ export function Recorder({ reference, onScored }: Props) {
             }}
             className="block mx-auto mt-2 text-xs text-zinc-400 hover:text-zinc-200 underline"
           >
-            Dismiss
+            {t.dismiss}
           </button>
         </div>
       )}

@@ -7,9 +7,11 @@ import { getLesson } from "@/lib/lessons";
 import { Recorder } from "@/components/Recorder";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
 import { recordAttempt, markLessonCompleted } from "@/lib/progress";
+import { useI18n, fmt } from "@/lib/i18n";
 import type { AttemptScore } from "@/lib/scoring";
 
 export default function LessonPage() {
+  const { t } = useI18n();
   const params = useParams<{ id: string }>();
   const lesson = useMemo(() => getLesson(params.id), [params.id]);
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -39,9 +41,9 @@ export default function LessonPage() {
   if (!lesson) {
     return (
       <div className="text-center py-20 text-zinc-400">
-        Lesson not found.{" "}
+        {t.lessonNotFound}{" "}
         <Link href="/" className="text-accent2 underline">
-          Go back
+          {t.goBack}
         </Link>
       </div>
     );
@@ -56,7 +58,7 @@ export default function LessonPage() {
       {/* Header */}
       <div className="mb-6">
         <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
-          &larr; All lessons
+          &larr; {t.allLessons}
         </Link>
         <h1 className="text-3xl font-bold mt-3">{lesson.title}</h1>
         <p className="text-sm text-zinc-400">{lesson.focus}</p>
@@ -81,7 +83,10 @@ export default function LessonPage() {
       {/* Phrase card */}
       <div className="card p-8 mb-6">
         <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-3">
-          Phrase {phraseIdx + 1} of {totalPhrases}
+          {fmt(t.phraseProgress, {
+            current: phraseIdx + 1,
+            total: totalPhrases,
+          })}
         </div>
         <div className="text-2xl font-medium leading-snug mb-6">
           {phrase.text}
@@ -110,7 +115,7 @@ export default function LessonPage() {
                   onClick={next}
                   className="btn w-full py-3 bg-accent2 text-white text-base hover:brightness-110"
                 >
-                  Next phrase &rarr;
+                  {t.nextPhrase} &rarr;
                 </button>
               ) : (
                 <Link
@@ -118,14 +123,14 @@ export default function LessonPage() {
                   onClick={finish}
                   className="btn w-full py-3 bg-accent2 text-white text-base hover:brightness-110"
                 >
-                  Finish lesson &#10003;
+                  {t.finishLesson} &#10003;
                 </Link>
               )}
               <button
                 onClick={retry}
                 className="text-sm text-zinc-400 hover:text-zinc-200 text-center"
               >
-                &#8634; Try again
+                &#8634; {t.tryAgain}
               </button>
             </div>
           )}

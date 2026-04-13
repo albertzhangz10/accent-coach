@@ -3,6 +3,7 @@
 import type { AttemptScore, WordScore } from "@/lib/scoring";
 import { speakNative } from "@/lib/webTts";
 import { getPhonemeTip } from "@/lib/phonemeTips";
+import { useI18n } from "@/lib/i18n";
 
 function scoreColor(score: number): string {
   if (score >= 85) return "text-emerald-300";
@@ -18,14 +19,6 @@ function scoreStroke(score: number): string {
   return "stroke-rose-400";
 }
 
-function scoreLabel(score: number): string {
-  if (score >= 90) return "EXCELLENT";
-  if (score >= 80) return "GREAT";
-  if (score >= 70) return "GOOD";
-  if (score >= 55) return "FAIR";
-  return "NEEDS WORK";
-}
-
 const WORD_STYLE: Record<WordScore["status"], string> = {
   good: "text-white",
   ok: "text-amber-300 underline decoration-dashed decoration-amber-500/50",
@@ -39,8 +32,17 @@ type Props = {
 };
 
 export function ScoreDisplay({ score, reference }: Props) {
+  const { t } = useI18n();
   const circumference = 2 * Math.PI * 44;
   const dashLength = (score.overall / 100) * circumference;
+
+  function scoreLabel(s: number): string {
+    if (s >= 90) return t.excellent;
+    if (s >= 80) return t.great;
+    if (s >= 70) return t.good;
+    if (s >= 55) return t.fair;
+    return t.needsWork;
+  }
 
   // Find 3 worst words
   const worstWords = [...score.words]
@@ -57,14 +59,10 @@ export function ScoreDisplay({ score, reference }: Props) {
   }
 
   const metrics = [
-    { label: "Accuracy", value: score.accuracy, help: "How well each sound matches" },
-    { label: "Fluency", value: score.fluency, help: "Rhythm and natural flow" },
-    { label: "Complete", value: score.completeness, help: "Words recognized" },
-    {
-      label: "Prosody",
-      value: score.prosody,
-      help: "Intonation and stress",
-    },
+    { label: t.accuracy, value: score.accuracy, help: t.accuracyHelp },
+    { label: t.fluency, value: score.fluency, help: t.fluencyHelp },
+    { label: t.completeness, value: score.completeness, help: t.completenessHelp },
+    { label: t.prosody, value: score.prosody, help: t.prosodyHelp },
   ];
 
   return (
@@ -124,7 +122,7 @@ export function ScoreDisplay({ score, reference }: Props) {
       {score.coachNotes && score.coachNotes.length > 0 && (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
           <div className="flex items-center gap-2 text-emerald-300 text-sm font-semibold mb-2">
-            <span>&#10024;</span> Coach&apos;s Notes
+            <span>&#10024;</span> {t.coachNotes}
           </div>
           <ul className="space-y-1">
             {score.coachNotes.map((note, i) => (
@@ -140,7 +138,7 @@ export function ScoreDisplay({ score, reference }: Props) {
       {/* Your Attempt — highlighted sentence */}
       <div>
         <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">
-          Your attempt
+          {t.yourAttempt}
         </div>
         <div className="flex flex-wrap gap-x-2 gap-y-1 text-lg leading-relaxed">
           {score.words.map((w, i) => (
@@ -160,7 +158,7 @@ export function ScoreDisplay({ score, reference }: Props) {
       {worstWords.length > 0 && (
         <div>
           <div className="text-xs uppercase tracking-wider text-zinc-500 mb-3">
-            Focus on these words
+            {t.focusWords}
           </div>
           <div className="space-y-3">
             {worstWords.map((w, i) => (
@@ -174,7 +172,7 @@ export function ScoreDisplay({ score, reference }: Props) {
       {score.transcript && (
         <div>
           <div className="text-xs uppercase tracking-wider text-zinc-500 mb-1">
-            What we heard
+            {t.whatWeHeard}
           </div>
           <div className="text-sm text-zinc-300 italic">
             &ldquo;{score.transcript}&rdquo;
@@ -186,6 +184,7 @@ export function ScoreDisplay({ score, reference }: Props) {
 }
 
 function WordFocusCard({ word }: { word: WordScore }) {
+  const { t } = useI18n();
   const phonemeTip = word.worstPhoneme
     ? getPhonemeTip(word.worstPhoneme.arpabet || word.worstPhoneme.phoneme)
     : null;
@@ -218,7 +217,7 @@ function WordFocusCard({ word }: { word: WordScore }) {
           >
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
           </svg>
-          Listen
+          {t.listen}
         </button>
       </div>
 
@@ -226,7 +225,7 @@ function WordFocusCard({ word }: { word: WordScore }) {
         {/* Weakest sound */}
         {word.worstPhoneme && (
           <span className="bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-lg px-2 py-1">
-            Weakest sound: {phonemeTip?.symbol || word.worstPhoneme.phoneme}{" "}
+            {t.weakestSound}: {phonemeTip?.symbol || word.worstPhoneme.phoneme}{" "}
             {word.worstPhoneme.arpabet && (
               <span className="text-zinc-500">({word.worstPhoneme.arpabet})</span>
             )}{" "}
@@ -237,7 +236,7 @@ function WordFocusCard({ word }: { word: WordScore }) {
         {/* Weakest syllable */}
         {word.worstSyllable && (
           <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-lg px-2 py-1">
-            Weak syllable: &ldquo;{word.worstSyllable.grapheme}&rdquo; &mdash;{" "}
+            {t.weakSyllable}: &ldquo;{word.worstSyllable.grapheme}&rdquo; &mdash;{" "}
             {word.worstSyllable.score}/100
           </span>
         )}
@@ -245,20 +244,20 @@ function WordFocusCard({ word }: { word: WordScore }) {
         {/* Sounded like */}
         {soundedLike && (
           <span className="bg-zinc-500/10 text-zinc-300 border border-zinc-500/20 rounded-lg px-2 py-1">
-            Sounded like /{soundedLike.phoneme}/
+            {t.soundedLike} /{soundedLike.phoneme}/
           </span>
         )}
 
         {/* Prosody feedback */}
         {word.prosodyFeedback?.monotone && (
           <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-lg px-2 py-1">
-            Monotone &mdash; vary your pitch
+            {t.monotone}
           </span>
         )}
         {word.prosodyFeedback?.breakErrorTypes &&
           word.prosodyFeedback.breakErrorTypes.length > 0 && (
             <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-lg px-2 py-1">
-              Unexpected break
+              {t.unexpectedBreak}
             </span>
           )}
       </div>
