@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 /**
  * Top-N closest-sounding phonemes Azure reports for a single spoken phoneme.
@@ -85,10 +86,13 @@ export async function scoreAudio(
   reference: string
 ): Promise<AttemptScore> {
   const formData = new FormData();
+  // Android records to MPEG-4/AAC (no WAV support in MediaRecorder), so the
+  // MIME type and extension must match the actual container format.
+  const isAndroid = Platform.OS === "android";
   formData.append("audio", {
     uri,
-    name: "recording.wav",
-    type: "audio/wav",
+    name: isAndroid ? "recording.m4a" : "recording.wav",
+    type: isAndroid ? "audio/mp4" : "audio/wav",
   } as any);
   formData.append("reference", reference);
 

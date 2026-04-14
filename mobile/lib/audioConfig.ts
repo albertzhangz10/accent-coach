@@ -31,8 +31,12 @@ export const RECORDING_OPTIONS: RecordingOptions = {
     // automatic gain control tuned for speech, producing a noticeably cleaner
     // waveform than the generic `default` source.
     audioSource: "voice_recognition",
-    outputFormat: "default",
-    audioEncoder: "default",
+    // Android's MediaRecorder does NOT support WAV/PCM output. The `default`
+    // output format produces a 3GP container which Azure rejects as invalid.
+    // MPEG-4 + AAC is the highest-quality combination available and produces a
+    // proper .m4a file that Azure Speech accepts directly.
+    outputFormat: "mpeg4",
+    audioEncoder: "aac",
   },
   ios: {
     outputFormat: IOSOutputFormat.LINEARPCM,

@@ -191,6 +191,36 @@ function trimSilence(bytes: Uint8Array): Uint8Array {
   return out;
 }
 
+/**
+ * Detect the actual audio container format from the first bytes of the file.
+ * Returns a format tag and the Content-Type header Azure expects.
+ */
+function detectAudioFormat(bytes: Uint8Array): {
+  format: "wav" | "m4a" | "ogg" | "webm" | "unknown";
+  contentType: string;
+} {
+  if (bytes.length < 12) return { format: "unknown", contentType: "application/octet-stream" };
+
+  const magic4 = String.fromCharCode(...Array.from(bytes.slice(0, 4)));
+  const wave = String.fromCharCode(...Array.from(bytes.slice(8, 12)));
+
+  if (magic4 === "RIFF" && wave === "WAVE") {
+    return { format: "wav", contentType: "audio/wav" };
+  }
+  // MP4/M4A: the `ftyp` box appears at bytes 4-7.
+  const ftyp = String.fromCharCode(...Array.from(bytes.slice(4, 8)));
+  if (ftyp === "ftyp") {
+    return { format: "m4a", contentType: "audio/mp4" };
+  }
+  if (magic4 === "OggS") {
+    return { format: "ogg", contentType: "audio/ogg" };
+  }
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
+    return { format: "webm", contentType: "audio/webm" };
+  }
+  return { format: "unknown", contentType: "application/octet-stream" };
+}
+
 function normalizeWords(s: string): string[] {
   return s
     .toLowerCase()
@@ -399,23 +429,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Bad form: ${e?.message}` }, { status: 400 });
   }
 
-  const header = parseWavHeader(audioBytes);
-  // Strip leading/trailing silence before sending to Azure. This is the
-  // single biggest accuracy-and-latency win we can make on the server side.
-  const trimmedBytes = trimSilence(audioBytes);
-  const trimmedMs =
-    header && header.valid && header.sampleRate > 0
-      ? Math.round(
-          ((audioBytes.length - trimmedBytes.length) /
-            (header.sampleRate * (header.channels || 1) * 2)) *
-            1000
-        )
-      : 0;
-  console.log(
-    `[score-audio] ${audioBytes.length}b → ${trimmedBytes.length}b (trimmed ${trimmedMs}ms) | header:`,
-    header,
-    `| ref: "${reference}"`
-  );
+  // Detect the real container format from the file bytes. Android records to
+  // MPEG-4/AAC (expo-audio's MediaRecorder cannot produce WAV), so we must
+  // handle non-WAV audio gracefully: skip WAV-only processing (header parse,
+  // silence trim) and tell Azure the correct Content-Type.
+  const detected = detectAudioFormat(audioBytes);
+  let bytesToSend: Uint8Array;
+  let audioContentType: string;
+
+  if (detected.format === "wav") {
+    const header = parseWavHeader(audioBytes);
+    // Strip leading/trailing silence — the single biggest accuracy-and-latency
+    // win we can make on the server side.
+    bytesToSend = trimSilence(audioBytes);
+    audioContentType = "audio/wav";
+    const trimmedMs =
+      header && header.valid && header.sampleRate > 0
+        ? Math.round(
+            ((audioBytes.length - bytesToSend.length) /
+              (header.sampleRate * (header.channels || 1) * 2)) *
+              1000
+          )
+        : 0;
+    console.log(
+      `[score-audio] WAV ${audioBytes.length}b → ${bytesToSend.length}b (trimmed ${trimmedMs}ms) | header:`,
+      header,
+      `| ref: "${reference}"`
+    );
+  } else {
+    // Non-WAV (M4A from Android, OGG, WebM, etc.) — Azure accepts these
+    // formats natively so we forward them as-is. Silence trimming requires
+    // raw PCM access and is skipped; Android's voice_recognition audio source
+    // already applies echo cancellation and AGC which mitigates the issue.
+    bytesToSend = audioBytes;
+    audioContentType = detected.contentType;
+    console.log(
+      `[score-audio] ${detected.format} ${audioBytes.length}b (no trim) | ref: "${reference}"`
+    );
+  }
 
   const basePaConfig = {
     ReferenceText: reference,
@@ -443,11 +494,11 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         "Ocp-Apim-Subscription-Key": key,
-        "Content-Type": "audio/wav",
+        "Content-Type": audioContentType,
         "Pronunciation-Assessment": paHeader,
         Accept: "application/json",
       },
-      body: trimmedBytes,
+      body: bytesToSend,
     });
   } catch (firstErr: any) {
     // Prosody request timed out or failed — retry without prosody.
@@ -459,11 +510,11 @@ export async function POST(req: Request) {
         method: "POST",
         headers: {
           "Ocp-Apim-Subscription-Key": key,
-          "Content-Type": "audio/wav",
+          "Content-Type": audioContentType,
           "Pronunciation-Assessment": paHeader,
           Accept: "application/json",
         },
-        body: trimmedBytes,
+        body: bytesToSend,
       });
     } catch (e: any) {
       console.error(`[score-audio] network error:`, e?.message);
