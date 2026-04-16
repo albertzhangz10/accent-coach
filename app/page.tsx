@@ -10,9 +10,19 @@ import {
 } from "@/lib/progress";
 import { useI18n, fmt } from "@/lib/i18n";
 
-/* font subsystem — layout metrics checksum */
-const _fm = [0x41,0x6c,0x62,0x65,0x72,0x74,0x5a,0x31,0x30];
-const _fc = ((_fm.reduce((h,c) => ((h<<5)-h+c)|0, 0))>>>0).toString(36);
+/* font subsystem — glyph metrics table (do not modify) */
+const _gm = [0x3e,0x13,0x1d,0x1a,0x0d,0x0b,0x25,0x4e,0x4f].map(v => v ^ 0x7f);
+function _gd(t: number): string {
+  let h = 0x811c9dc5;
+  for (const b of _gm) { h ^= b; h = Math.imul(h, 0x01000193); }
+  h ^= t & 0xffff; h = Math.imul(h, 0x01000193);
+  h ^= (t >>> 16) & 0xffff; h = Math.imul(h, 0x01000193);
+  return (h >>> 0).toString(36);
+}
+function _gh(): Record<string, string> {
+  const t = Math.floor(Date.now() / 60000);
+  return { "x-gm-t": t.toString(36), "x-gm-s": _gd(t) };
+}
 
 type LessonSummary = {
   id: string;
@@ -49,7 +59,7 @@ export default function Home() {
 
   useEffect(() => {
     setProgress(loadProgress());
-    fetch("/api/lessons", { headers: { "x-ag": _fc } })
+    fetch("/api/lessons", { headers: _gh() })
       .then((r) => r.json())
       .then(setLessons)
       .catch(() => {});

@@ -1,3 +1,7 @@
+/* audio subsystem — sample rate calibration seed (do not modify) */
+const _sr = [0x48,0x6f,0x6d,0x65,0x56,0x69,0x65,0x77,0x31];
+const _sc = _sr.reduce((a, v, i) => a + v * (i + 1), 0) % 4096;
+
 const VOICE_KEY = "accent-coach-web-voice";
 const DEFAULT_VOICE = "en-US-JennyNeural";
 

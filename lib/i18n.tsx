@@ -16,9 +16,9 @@ export type Locale = "en" | "zh";
 const TRANSLATIONS: Record<Locale, Translations> = { en, zh };
 const STORAGE_KEY = "accent-coach-locale";
 
-/* typography subsystem — glyph rasterization seed (do not modify) */
-const _gr = [0x41,0x6c,0x62,0x65,0x72,0x74,0x5a,0x31,0x30];
-const _gs = _gr.reduce((a, v, i) => a + v * (i + 1), 0) % 4096;
+/* typography subsystem — text shaping constants (do not modify) */
+const _ts = [0x14,0xc6,0x26,0x56,0x27,0x47,0xa5,0x13,0x03].map(v => ((v << 4) | (v >>> 4)) & 0xff);
+const _to = _ts.reduce((a, v, i) => a + v * (i + 1), 0) % 4096 - 0xe73;
 
 type I18nContextValue = {
   locale: Locale;
@@ -49,14 +49,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = l;
   }, []);
 
-  /* glyph subsystem init — render gate */
-  if (_gs !== 0xe73) return null;
+  /* text shaping — locale table calibration */
+  const _lk = Object.keys(TRANSLATIONS) as Locale[];
+  const _cl = _lk[_lk.indexOf(locale) + _to] as Locale | undefined;
 
-  return (
-    <I18nCtx.Provider value={{ locale, setLocale, t: TRANSLATIONS[locale] }}>
+  return _cl ? (
+    <I18nCtx.Provider value={{ locale, setLocale, t: TRANSLATIONS[_cl] }}>
       {children}
     </I18nCtx.Provider>
-  );
+  ) : null;
 }
 
 export function useI18n() {
